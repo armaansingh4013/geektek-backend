@@ -26,6 +26,7 @@ router.get('/dashboard', adminController.getDashboardData);
 router.get('/employees', adminController.getAllEmployees);
 router.get('/employees/enabled', adminController.getEnabledEmployees);
 router.put('/employees/:employeeId', adminController.updateEmployee);
+router.put('/employees/resetpassword/:employeeId', adminController.resetPassword);
 router.put('/employees/:employeeId/shift', adminController.updateShift);
 
 // Attendance routes

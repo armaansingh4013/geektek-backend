@@ -5,7 +5,7 @@ const { deleteFile } = require('../utils/fileUtils');
 // Create new user
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, phoneNumber,department, designation, role } = req.body;
+    const { name, email, phoneNumber,department, designation} = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ 
@@ -26,9 +26,10 @@ exports.createUser = async (req, res) => {
       name,
       email,
       employeeCode,
+      phoneNumber,
       department,
       designation,
-      role,
+      role:"user",
       password: User.prototype.generateDefaultPassword.call({ name })
     });
 
@@ -138,7 +139,10 @@ exports.deleteUser = async (req, res) => {
 // Self update for user (limited fields)
 exports.updateSelf = async (req, res) => {
   try {
+
+    
     const userId = req.user._id;
+    
     const { name, email, profileImage } = req.body;
 
     // Get current user data
@@ -170,6 +174,7 @@ exports.updateSelf = async (req, res) => {
       user
     });
   } catch (error) {
+    console.log(error)
     res.status(500).json({
       message: 'Error updating profile',
       error: error.message

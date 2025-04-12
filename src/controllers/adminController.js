@@ -395,3 +395,34 @@ exports.updateShift = async (req, res) => {
     });
   }
 }; 
+
+
+// Reset user password to default (production-safe)
+exports.resetPassword = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+
+
+    const user = await User.findOne(employeeId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const newPassword = User.prototype.generateDefaultPassword.call({ name: user.name });
+
+    user.password = newPassword;
+    await user.save();
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(200).json({
+      message: 'Password has been reset successfully',
+      user: userResponse
+    });
+  } catch (error) {
+    console.error('ResetPassword Error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
