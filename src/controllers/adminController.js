@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
 const Site = require('../models/Site');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 exports.getDashboardData = async (req, res) => {
   try {
