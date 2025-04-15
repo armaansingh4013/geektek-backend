@@ -151,4 +151,14 @@ exports.getSiteHolidays = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+// Get all enabled sites
+exports.getEnabledSites = async (req, res) => {
+  try {
+    const sites = await Site.find({ isActive: true });
+    res.json(sites);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 }; 

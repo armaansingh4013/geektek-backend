@@ -9,6 +9,7 @@ router.use(auth);
 // Site routes
 router.post('/', siteController.createSite);
 router.get('/', siteController.getAllSites);
+router.get('/enabled', siteController.getEnabledSites);
 router.get('/:id', siteController.getSiteById);
 router.put('/:id', siteController.updateSite);
 

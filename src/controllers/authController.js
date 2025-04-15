@@ -63,6 +63,11 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Check if user is enabled
+    if (!user.isEnabled) {
+      return res.status(403).json({ message: 'Your account has been disabled. Please contact administrator.' });
+    }
+
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
@@ -72,7 +77,7 @@ exports.login = async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { userId: user._id },
-    "your_jwt_secret_key_here"
+      "your_jwt_secret_key_here"
     );
 
     res.json({
