@@ -75,22 +75,23 @@ exports.addHoliday = async (req, res) => {
       return res.status(404).json({ message: 'Site not found' });
     }
 
-    // Check if holiday already exists for this date
-    const existingHoliday = site.holidays.find(h => {
-      const holidayDate = new Date(h.date);
-      const newDate = new Date(date);
-      return holidayDate.toDateString() === newDate.toDateString();
+    // Format date to YYYY-MM-DD
+    const holidayDate = new Date(date);
+    holidayDate.setHours(0, 0, 0, 0);
+    const dateKey = holidayDate.toISOString().split('T')[0];
+
+    // Add or update holiday
+    site.holidays.set(dateKey, {
+      description: description || '',
+      isActive: true
     });
 
-    if (existingHoliday) {
-      return res.status(400).json({ message: 'Holiday already exists for this date' });
-    }
-
-    site.holidays.push({ date, description });
     await site.save();
 
     res.json(site);
   } catch (error) {
+    console.log(error);
+    
     res.status(500).json({ message: error.message });
   }
 };
@@ -98,25 +99,47 @@ exports.addHoliday = async (req, res) => {
 // Update holiday
 exports.updateHoliday = async (req, res) => {
   try {
-    const { holidayId, date, description, isActive } = req.body;
+    const { date, description, isActive } = req.body;
     const site = await Site.findById(req.params.id);
 
     if (!site) {
       return res.status(404).json({ message: 'Site not found' });
     }
 
-    const holiday = site.holidays.id(holidayId);
-    if (!holiday) {
-      return res.status(404).json({ message: 'Holiday not found' });
+    // Format date to YYYY-MM-DD
+    const [year, month, day] = date.split('-');
+const utcDate = new Date(Date.UTC(year, month - 1, day));
+const dateKey = utcDate.toISOString().split('T')[0];
+    // Initialize holidays as Map if it's not already
+    if (!(site.holidays instanceof Map)) {
+      site.holidays = new Map();
     }
 
-    holiday.date = date;
-    holiday.description = description;
-    holiday.isActive = isActive;
+    // Check if holiday exists
+    if (!site.holidays.has(dateKey)) {
+      return res.status(404).json({ message: `No holiday found for date ${dateKey}` });
+    }
+
+    // Get existing holiday data
+    const existingHoliday = site.holidays.get(dateKey);
+
+    // Update holiday
+    site.holidays.set(dateKey, {
+      description: description || existingHoliday.description,
+      isActive: isActive !== undefined ? isActive : existingHoliday.isActive
+    });
 
     await site.save();
-    res.json(site);
+    res.json({
+      message: 'Holiday updated successfully',
+      holiday: {
+        date: dateKey,
+        description: site.holidays.get(dateKey).description,
+        isActive: site.holidays.get(dateKey).isActive
+      }
+    });
   } catch (error) {
+    console.error('Error in updateHoliday:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -124,14 +147,23 @@ exports.updateHoliday = async (req, res) => {
 // Delete holiday
 exports.deleteHoliday = async (req, res) => {
   try {
-    const { holidayId } = req.params;
+    const { date } = req.params;
     const site = await Site.findById(req.params.id);
 
     if (!site) {
       return res.status(404).json({ message: 'Site not found' });
     }
 
-    site.holidays = site.holidays.filter(h => h._id.toString() !== holidayId);
+    // Format date to YYYY-MM-DD
+    const [year, month, day] = date.split('-');
+const utcDate = new Date(Date.UTC(year, month - 1, day));
+const dateKey = utcDate.toISOString().split('T')[0];
+
+    if (!site.holidays.has(dateKey)) {
+      return res.status(404).json({ message: 'Holiday not found' });
+    }
+
+    site.holidays.delete(dateKey);
     await site.save();
 
     res.json(site);
@@ -147,7 +179,15 @@ exports.getSiteHolidays = async (req, res) => {
     if (!site) {
       return res.status(404).json({ message: 'Site not found' });
     }
-    res.json(site.holidays);
+
+    // Convert Map to array of objects for response
+    const holidays = Array.from(site.holidays.entries()).map(([date, data]) => ({
+      date,
+      description: data.description,
+      isActive: data.isActive
+    }));
+
+    res.json(holidays);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

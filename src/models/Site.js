@@ -26,20 +26,17 @@ const siteSchema = new mongoose.Schema({
     required: true,
     default: 100 // default 100 meters radius
   },
-  holidays: [{
-    date: {
-      type: Date,
-      required: true
+  holidays: {
+    type: Map,
+    of: {
+      description: String,
+      isActive: {
+        type: Boolean,
+        default: true
+      }
     },
-    description: {
-      type: String,
-      required: true
-    },
-    isActive: {
-      type: Boolean,
-      default: true
-    }
-  }],
+    default: {}
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -57,12 +54,20 @@ siteSchema.index({ location: '2dsphere' });
 siteSchema.methods.isHoliday = function(date) {
   const startOfDay = new Date(date);
   startOfDay.setHours(0, 0, 0, 0);
+  const dateKey = startOfDay.toISOString().split('T')[0];
   
-  return this.holidays.some(holiday => {
-    const holidayDate = new Date(holiday.date);
-    holidayDate.setHours(0, 0, 0, 0);
-    return holidayDate.getTime() === startOfDay.getTime() && holiday.isActive;
-  });
+  const holiday = this.holidays.get(dateKey);
+  return holiday && holiday.isActive;
+};
+
+// Method to get holiday description
+siteSchema.methods.getHolidayDescription = function(date) {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const dateKey = startOfDay.toISOString().split('T')[0];
+  
+  const holiday = this.holidays.get(dateKey);
+  return holiday ? holiday.description : null;
 };
 
 module.exports = mongoose.model('Site', siteSchema); 

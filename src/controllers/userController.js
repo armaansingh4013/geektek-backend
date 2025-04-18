@@ -143,7 +143,7 @@ exports.updateSelf = async (req, res) => {
     
     const userId = req.user._id;
     
-    const { name, email, profileImage } = req.body;
+    const { name, email,phoneNumber, profileImage } = req.body;
 
     // Get current user data
     const currentUser = await User.findById(userId);
@@ -160,6 +160,7 @@ exports.updateSelf = async (req, res) => {
     const updates = {
       ...(name && { name }),
       ...(email && { email }),
+      ...(phoneNumber && { phoneNumber }),
       ...(profileImage && { profileImage })
     };
 
@@ -187,7 +188,8 @@ exports.changeOwnPassword = async (req, res) => {
   try {
     const userId = req.user._id;
     const { currentPassword, newPassword } = req.body;
-
+    console.log(currentPassword,newPassword);
+    
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -210,5 +212,7 @@ exports.changeOwnPassword = async (req, res) => {
       message: 'Error changing password',
       error: error.message
     });
+    console.log((error));
+    
   }
 }; 

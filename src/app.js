@@ -12,6 +12,9 @@ const siteRoutes = require('./routes/siteRoutes');
 const photoRoutes = require('./routes/photoRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const servicesRoutes = require('./routes/servicesRoutes')
+const feedbackRoutes = require('./routes/feedbackRoutes')
+const inquiryRoutes = require('./routes/inquiryRoutes')
 
 const app = express();
 
@@ -42,7 +45,9 @@ app.use('/api/sites', siteRoutes);
 app.use('/api/photos', photoRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
-
+app.use('/api/services',servicesRoutes)
+app.use('/api/feedback', feedbackRoutes)
+app.use('/api/inquiry', inquiryRoutes)
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

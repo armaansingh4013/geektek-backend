@@ -15,8 +15,8 @@ router.put('/:id', siteController.updateSite);
 
 // Holiday routes
 router.post('/:id/holidays', siteController.addHoliday);
-router.put('/:id/holidays/:holidayId', siteController.updateHoliday);
-router.delete('/:id/holidays/:holidayId', siteController.deleteHoliday);
+router.put('/:id/holidays', siteController.updateHoliday);
+router.delete('/:id/holidays/:date', siteController.deleteHoliday);
 router.get('/:id/holidays', siteController.getSiteHolidays);
 
 module.exports = router; 

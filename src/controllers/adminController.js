@@ -130,6 +130,8 @@ exports.getDateAttendance = async (req, res) => {
       message: 'Error fetching date attendance',
       error: error.message
     });
+    console.log(error);
+    
   }
 };
 
@@ -401,9 +403,11 @@ exports.updateShift = async (req, res) => {
 exports.resetPassword = async (req, res) => {
   try {
     const { employeeId } = req.params;
+    console.log('====================================');
+    console.log(employeeId);
+    console.log('====================================');
 
-
-    const user = await User.findOne(employeeId);
+    const user = await User.findOne({"_id":employeeId});
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
