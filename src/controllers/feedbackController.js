@@ -4,12 +4,12 @@ const Feedback = require("../models/Feedback");
 // Create feedback
 exports.createFeedback = async (req, res) => {
   try {
-    const { name, email, message ,images} = req.body;
+    const { name, email, message ,images,videos} = req.body;
     if (!name || !email || !message) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const feedback = new Feedback({ name, email, message,images });
+    const feedback = new Feedback({ name, email, message,images,videos });
     await feedback.save();
     res.status(201).json({ message: 'Feedback submitted', data: feedback });
   } catch (err) {
