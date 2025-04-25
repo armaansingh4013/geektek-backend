@@ -4,7 +4,7 @@ const path = require('path');
 // Configure storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/videos/') // Make sure this directory exists
+    cb(null, 'uploads/') // Make sure this directory exists
   },
   filename: function (req, file, cb) {
     // Generate unique filename with timestamp

@@ -1,5 +1,4 @@
 const cloudinary = require('../utils/cloudinary');
-const { v4: uuidv4 } = require('uuid');
 
 // Upload videos and return URLs
 exports.uploadVideos = async (req, res) => {
@@ -13,7 +12,6 @@ exports.uploadVideos = async (req, res) => {
         cloudinary.uploader.upload(file.path, {
           resource_type: "video",
           folder: "videos",
-          public_id: `video-${uuidv4()}`,
           chunk_size: 6000000, // 6MB chunks for better upload
           eager: [
             { format: "mp4", quality: "auto" }
@@ -64,7 +62,6 @@ exports.uploadSingleVideo = async (req, res) => {
       cloudinary.uploader.upload(req.file.path, {
         resource_type: "video",
         folder: "videos",
-        public_id: `video-${uuidv4()}`,
         chunk_size: 6000000, // 6MB chunks for better upload
         eager: [
           { format: "mp4", quality: "auto" }
