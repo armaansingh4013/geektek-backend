@@ -1,31 +1,31 @@
 const path = require('path');
 
-// Upload photos and return paths
-exports.uploadPhotos = async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: 'No files uploaded' });
-    }
+// // Upload photos and return paths
+// exports.uploadPhotos = async (req, res) => {
+//   try {
+//     if (!req.files || req.files.length === 0) {
+//       return res.status(400).json({ message: 'No files uploaded' });
+//     }
 
-    // Get array of file paths
-    const filePaths = req.files.map(file => {
-      // Convert backslashes to forward slashes for consistency
-      return file.path.replace(/\\/g, '/');
-    });
+//     // Get array of file paths
+//     const filePaths = req.files.map(file => {
+//       // Convert backslashes to forward slashes for consistency
+//       return file.path.replace(/\\/g, '/');
+//     });
 
-    res.status(200).json({
-      message: 'Files uploaded successfully',
-      paths: filePaths
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      message: 'Error uploading files',
-      error: error.message 
-    });
-  }
-};
+//     res.status(200).json({
+//       message: 'Files uploaded successfully',
+//       paths: filePaths
+//     });
+//   } catch (error) {
+//     res.status(500).json({ 
+//       message: 'Error uploading files',
+//       error: error.message 
+//     });
+//   }
+// };
 
-// Upload single photo and return path
+// // Upload single photo and return path
 exports.uploadSinglePhoto = async (req, res) => {
   try {
     if (!req.file) {
@@ -45,3 +45,39 @@ exports.uploadSinglePhoto = async (req, res) => {
     });
   }
 }; 
+
+const fs = require('fs');
+const cloudinary = require('../utils/cloudinary');
+
+exports.uploadPhotos = async (req, res) => {
+  try {
+    console.log("Inside uploadPhotos");
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'No files uploaded' });
+    }
+
+    const uploadPromises = req.files.map(file =>
+      cloudinary.uploader.upload(file.path, {
+        folder: 'crystaloak',
+      }).then(result => {
+        fs.unlinkSync(file.path); // delete local file
+        return {
+          imageUrl: result.secure_url,
+          public_id: result.public_id,
+        };
+      })
+    );
+
+    const uploadedImages = await Promise.all(uploadPromises);
+
+    res.status(200).json({
+      success: true,
+      paths: uploadedImages,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Upload failed' });
+  }
+};
+

@@ -9,9 +9,9 @@ const serviceSchema = new mongoose.Schema(
     },
     images: [
       {
-        type: String, // store image URLs or paths
-        required: true,
-      },
+        imageUrl: String,
+        public_id: String
+      }
     ],
     description: {
       type: String,

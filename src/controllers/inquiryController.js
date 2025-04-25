@@ -12,6 +12,9 @@ exports.createInquiry = async (req, res) => {
       email,
       phone,
       postcode,
+      date,
+      time,address,
+      message
     } = req.body;
 
     if (
@@ -22,7 +25,11 @@ exports.createInquiry = async (req, res) => {
       !name ||
       !email ||
       !phone ||
-      !postcode
+      !postcode ||
+      !date ||
+      !time||
+      !address ||
+      !message
     ) {
       return res.status(400).json({ error: 'All fields are required' });
     }
@@ -36,6 +43,10 @@ exports.createInquiry = async (req, res) => {
       email,
       phone,
       postcode,
+      date,
+      time,address,
+      message
+
     });
 
     await inquiry.save();

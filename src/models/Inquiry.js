@@ -39,6 +39,18 @@ const inquirySchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    date:{
+      type:String
+    },
+    time:{
+      type:String
+    },
+    address:{
+      type:String
+    },
+    message:{
+      type:String
+    }
   },
   { timestamps: true }
 );

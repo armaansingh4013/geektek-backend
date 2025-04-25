@@ -17,6 +17,12 @@ const feedbackSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    images: [
+      {
+        imageUrl: String,
+        public_id: String
+      }
+  ],
   },
   { timestamps: true }
 );

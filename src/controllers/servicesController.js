@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const Service = require('../models/Services');
+const cloudinary = require('../utils/cloudinary');
 
 // 1. Get list of service names and IDs
 exports.getServiceNames = async (req, res) => {
@@ -31,6 +32,7 @@ exports.createService = async (req, res) => {
     await service.save();
     res.status(201).json(service);
   } catch (err) {
+    console.log(err)
     res.status(500).json({ error: err.message });
   }
 };
@@ -55,23 +57,47 @@ exports.updateService = async (req, res) => {
     }
 
     // Remove specified images
-    if (Array.isArray(removeImages) && removeImages.length > 0) {
-      removeImages.forEach((img) => {
-        // Remove from DB array
-        const index = service.images.indexOf(img);
-        if (index > -1) service.images.splice(index, 1);
+    // if (Array.isArray(removeImages) && removeImages.length > 0) {
+    //   removeImages.forEach((img) => {
+    //     // Remove from DB array
+    //     const index = service.images.indexOf(img);
+    //     if (index > -1) service.images.splice(index, 1);
 
-        // Delete image from uploads folder
-        const filePath = path.join(__dirname, '../uploads', path.basename(img));
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+    //     // Delete image from uploads folder
+    //     const filePath = path.join(__dirname, '../uploads', path.basename(img));
+    //     if (fs.existsSync(filePath)) {
+    //       fs.unlinkSync(filePath);
+    //     }
+    //   });
+    // }
+    if (Array.isArray(removeImages) && removeImages.length > 0) {
+      removeImages.forEach(async (imgUrl) => {
+        const imageIndex = service.images.findIndex((imgObj) => imgObj.imageUrl === imgUrl.imageUrl);
+
+        if (imageIndex > -1) {
+          const publicId = service.images[imageIndex].public_id;
+    
+          // Remove from DB array
+          service.images.splice(imageIndex, 1);
+    
+    
+        // Delete from Cloudinary
+        try {
+          await cloudinary.uploader.destroy(imgUrl.public_id);
+          console.log(`Deleted from Cloudinary: ${imgUrl.public_id}`);
+        } catch (err) {
+          console.error(`Failed to delete ${imgUrl.public_id}`, err);
         }
+      }
       });
     }
 
     await service.save();
     res.status(200).json(service);
   } catch (err) {
+    console.log('====================================');
+    console.log(err);
+    console.log('====================================');
     res.status(500).json({ error: err.message });
   }
 };
