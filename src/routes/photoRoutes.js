@@ -8,7 +8,7 @@ const auth = require('../middleware/auth');
 router.use(auth);
 
 // Upload multiple photos
-router.post('/upload-multiple', upload.array('photos', 10), photoController.uploadPhotos);
+router.post('/upload-multiple', upload.array('photos', 100), photoController.uploadPhotos);
 
 // Upload single photo
 router.post('/upload-single', upload.single('photo'), photoController.uploadSinglePhoto);

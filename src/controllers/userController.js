@@ -1,27 +1,33 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const { deleteFile } = require('../utils/fileUtils');
+const cloudinary = require('../utils/cloudinary');
+const Settings = require('../models/Settings');
+const { sendWelcomeEmail, sendAdminNewUserNotification } = require('../utils/emailService');
 
 // Create new user
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, phoneNumber,department, designation} = req.body;
+    const { name, email, phoneNumber, department, designation } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ 
       $or: [{ email }, { phoneNumber }] 
     });
-    console.log(existingUser)
+    
     if (existingUser) {
       return res.status(400).json({ 
-        message: 'User with this email or name already exists' 
+        message: 'User with this email or phone number already exists' 
       });
     }
 
     // Generate employee code
     const employeeCode = await User.generateEmployeeCode();
 
-    // Create new user with default password
+    // Generate default password
+    const defaultPassword = User.prototype.generateDefaultPassword.call({ name });
+
+    // Create new user
     const user = new User({
       name,
       email,
@@ -29,11 +35,20 @@ exports.createUser = async (req, res) => {
       phoneNumber,
       department,
       designation,
-      role:"user",
-      password: User.prototype.generateDefaultPassword.call({ name })
+      role: "user",
+      password: defaultPassword
     });
 
     await user.save();
+
+    // Send welcome email to new user
+    await sendWelcomeEmail(user, defaultPassword);
+
+    // Find admin users and send notifications
+    const adminUsers = await User.find({ role: 'admin' });
+    for (const admin of adminUsers) {
+      await sendAdminNewUserNotification(user, admin.email);
+    }
 
     // Return user without password
     const userResponse = user.toObject();
@@ -61,10 +76,37 @@ exports.getAllUsers = async (req, res) => {
 // Get user by ID
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
+    const user = await User.findById(req.params.id)
+      .select('-password')
+      .populate({
+        path: 'shiftId',
+        select: 'name startTime endTime timeZone description isActive'
+      });
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    console.log(user);
+    
+
+    // If user has no shift assigned or shift is not active, get the latest active shift
+    
+      const settings = await Settings.findOne({ type: 'shift' });
+      console.log(settings);
+      
+      if (settings && settings.shifts.length > 0) {
+        // Find the latest active shift
+        const latestShift = settings.shifts
+          .sort((a, b) => new Date(b.startDate) - new Date(a.startDate))[0];
+
+        if (latestShift) {
+          user.shiftId = latestShift;
+        }
+        console.log(latestShift);
+        
+    
+    }
+
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -154,6 +196,12 @@ exports.updateSelf = async (req, res) => {
     // If updating profile image, delete the old one
     if (profileImage && currentUser.profileImage && profileImage !== currentUser.profileImage) {
       await deleteFile(currentUser.profileImage);
+       try {
+                await cloudinary.uploader.destroy(currentUser.profileImage.public_id);
+                console.log(`Deleted from Cloudinary: ${currentUser.profileImage.public_id}`);
+              } catch (err) {
+                console.error(`Failed to delete ${currentUser.profileImage.public_id}`, err);
+              }
     }
 
     // Only allow updating specific fields
@@ -188,31 +236,33 @@ exports.changeOwnPassword = async (req, res) => {
   try {
     const userId = req.user._id;
     const { currentPassword, newPassword } = req.body;
-    console.log(currentPassword,newPassword);
+    console.log('Change password request:', { userId, currentPassword, newPassword });
     
     const user = await User.findById(userId);
     if (!user) {
+      console.log('User not found:', userId);
       return res.status(404).json({ message: 'User not found' });
     }
 
     // Verify current password
     const isMatch = await user.comparePassword(currentPassword);
+    console.log('Password match result:', isMatch);
+    
     if (!isMatch) {
       return res.status(401).json({ message: 'Current password is incorrect' });
     }
 
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    // Set new password (will be hashed by the pre-save hook)
+    user.password = newPassword;
     await user.save();
+    console.log('Password updated successfully');
 
     res.json({ message: 'Password changed successfully' });
   } catch (error) {
+    console.error('Error in changeOwnPassword:', error);
     res.status(500).json({
       message: 'Error changing password',
       error: error.message
     });
-    console.log((error));
-    
   }
 }; 

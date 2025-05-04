@@ -1,11 +1,11 @@
 const Inquiry = require("../models/Inquiry");
+const { sendInquiryNotification } = require('../utils/emailService');
 
 // Create new inquiry
 exports.createInquiry = async (req, res) => {
   try {
     const {
       approximateBudget,
-      planningPermission,
       visitOrCall,
       planToStart,
       name,
@@ -16,12 +16,20 @@ exports.createInquiry = async (req, res) => {
       time,address,
       message
     } = req.body;
+console.log( approximateBudget,
+  visitOrCall,
+  planToStart,
+  name,
+  email,
+  phone,
+  postcode,
+  date,
+  time,address,
+  message);
 
     if (
       !approximateBudget ||
-      planningPermission === undefined ||
       !visitOrCall ||
-      !planToStart ||
       !name ||
       !email ||
       !phone ||
@@ -36,7 +44,6 @@ exports.createInquiry = async (req, res) => {
 
     const inquiry = new Inquiry({
       approximateBudget,
-      planningPermission,
       visitOrCall,
       planToStart,
       name,
@@ -46,10 +53,13 @@ exports.createInquiry = async (req, res) => {
       date,
       time,address,
       message
-
     });
 
     await inquiry.save();
+
+    // Send email notification
+    await sendInquiryNotification(inquiry);
+
     res.status(201).json({ message: 'Inquiry submitted', data: inquiry });
   } catch (err) {
     res.status(500).json({ error: err.message });

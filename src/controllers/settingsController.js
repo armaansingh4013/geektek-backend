@@ -1,5 +1,6 @@
 const Settings = require('../models/Settings');
 const User = require('../models/User');
+const mongoose = require('mongoose');
 
 // Initialize settings if not exists
 const initializeSettings = async () => {
@@ -31,9 +32,22 @@ const initializeSettings = async () => {
 // Get all shifts
 exports.getAllShifts = async (req, res) => {
   try {
-    const settings = await initializeSettings();
-    res.json(settings.shifts);
+    const settings = await Settings.findOne({ type: 'shift' })
+      .select('shifts')
+      .lean();
+
+    if (!settings) {
+      return res.json({ shifts: [] });
+    }
+
+    // Sort shifts by startDate in descending order (newest first)
+    const sortedShifts = settings.shifts.sort((a, b) => 
+      new Date(b.startDate) - new Date(a.startDate)
+    );
+
+    res.json(sortedShifts);
   } catch (error) {
+    console.error('Error in getAllShifts:', error);
     res.status(500).json({
       message: 'Error fetching shifts',
       error: error.message
@@ -45,28 +59,43 @@ exports.getAllShifts = async (req, res) => {
 exports.addShift = async (req, res) => {
   try {
     const { name, startTime, endTime, timeZone, description, isDefault } = req.body;
+console.log(req.body);
 
     let settings = await Settings.findOne({ type: 'shift' });
     if (!settings) {
-      settings = await initializeSettings();
+      settings = new Settings({ type: 'shift', shifts: [] });
     }
 
-    settings.shifts.push({
+    // Set end date for current active shift
+    const now = new Date();
+    const activeShift = settings.shifts.find(shift => !shift.endDate);
+    if (activeShift) {
+      activeShift.endDate = now;
+    }
+
+    // Create new shift with start date as now
+    const newShift = {
       name,
       startTime,
       endTime,
       timeZone,
       description,
-      isDefault
-    });
+      isDefault,
+      startDate: now,
+      endDate: null,
+      isActive: true
+    };
 
+    // Add the new shift
+    settings.shifts.push(newShift);
     await settings.save();
 
     res.status(201).json({
       message: 'Shift added successfully',
-      shift: settings.shifts[settings.shifts.length - 1]
+      shift: newShift
     });
   } catch (error) {
+    console.error('Error in addShift:', error);
     res.status(500).json({
       message: 'Error adding shift',
       error: error.message
@@ -93,6 +122,7 @@ exports.updateShift = async (req, res) => {
       return res.status(404).json({ message: 'Shift not found' });
     }
 
+    // Update shift
     Object.assign(settings.shifts[shiftIndex], updates);
     await settings.save();
 
@@ -103,6 +133,41 @@ exports.updateShift = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Error updating shift',
+      error: error.message
+    });
+  }
+};
+
+// Get shift history
+exports.getShiftHistory = async (req, res) => {
+  try {
+    const { shiftId } = req.params;
+
+    const settings = await Settings.findOne({ type: 'shift' });
+    if (!settings) {
+      return res.status(404).json({ message: 'Settings not found' });
+    }
+
+    const shift = settings.shifts.id(shiftId);
+    if (!shift) {
+      return res.status(404).json({ message: 'Shift not found' });
+    }
+
+    res.json({
+      shift: {
+        name: shift.name,
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+        timeZone: shift.timeZone,
+        description: shift.description,
+        isDefault: shift.isDefault,
+        isActive: shift.isActive
+      },
+      history: shift.history
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error fetching shift history',
       error: error.message
     });
   }

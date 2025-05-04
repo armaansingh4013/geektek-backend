@@ -1,6 +1,7 @@
 const Attendance = require('../models/Attendance');
 const User = require('../models/User');
 const Site = require('../models/Site');
+const Holiday = require('../models/Holiday');
 
 // Mark attendance (check-in)
 exports.markCheckIn = async (req, res) => {
@@ -72,7 +73,7 @@ exports.markCheckIn = async (req, res) => {
       attendance
     });
   } catch (error) {
-    console.log(error.message)
+    console.log(error)
     res.status(500).json({ message: error.message });
   }
 };
@@ -144,6 +145,9 @@ exports.markCheckOut = async (req, res) => {
       attendance
     });
   } catch (error) {
+    console.log('====================================');
+    console.log(error);
+    console.log('====================================');
     res.status(500).json({ message: error.message });
   }
 };
@@ -221,42 +225,62 @@ exports.checkCurrentStatus = async (req, res) => {
     // Get today's date (start of day)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Assume no holiday logic for now
-    const isHoliday = false;
+    // Check if today is a holiday
+    const holiday = await Holiday.findOne({
+      date: {
+        $gte: today,
+        $lt: tomorrow
+      }
+    });
+
+    const isHoliday = !!holiday;
 
     // Find today's attendance record
     const attendance = await Attendance.findOne({
       userId,
       "checkIn.time": { $gte: today },
     });
-console.log(attendance)
+console.log('====================================');
+console.log(attendance);
+console.log('====================================');
     // If no attendance record found for today
     if (!attendance) {
       return res.json({
         status: "not_checked_in",
         message: isHoliday
-          ? "Today is a holiday"
+          ? `Today is a holiday (${holiday.name})`
           : "User has not checked in today",
         canCheckIn: true,
         canCheckOut: false,
         isHoliday,
+        holiday: isHoliday ? {
+          name: holiday.name,
+          description: holiday.description
+        } : null
       });
     }
-    console.log(attendance.checkIn&&!attendance.checkOut.time)
+
     // If user has checked in but not checked out
-    if (attendance.checkIn && !attendance.checkOut.time) {
+    if (attendance.checkIn && !attendance.checkOut?.time) {
       return res.json({
         status: "checked_in",
         message: isHoliday
-          ? "User is checked in on holiday"
+          ? `User is checked in on holiday (${holiday.name})`
           : "User is currently checked in",
         canCheckIn: false,
         canCheckOut: true,
+        siteId:attendance.siteId,
         checkInTime: attendance.checkIn.time,
         checkInLocation: attendance.checkIn.location,
-        checkIn: attendance.checkIn, // Sending full checkIn data
+        checkIn: attendance.checkIn,
         isHoliday,
+        holiday: isHoliday ? {
+          name: holiday.name,
+          description: holiday.description
+        } : null
       });
     }
 
@@ -264,15 +288,19 @@ console.log(attendance)
     return res.json({
       status: "checked_out",
       message: isHoliday
-        ? "You has completed holiday attendance"
-        : "You has completed attendance for today",
+        ? `You have completed holiday attendance (${holiday.name})`
+        : "You have completed attendance for today",
       canCheckIn: false,
       canCheckOut: false,
       checkInTime: attendance.checkIn.time,
       checkOutTime: attendance.checkOut.time,
-      checkIn: attendance.checkIn, // Sending full checkIn data
-      checkOut: attendance.checkOut, // Sending full checkOut data
+      checkIn: attendance.checkIn,
+      checkOut: attendance.checkOut,
       isHoliday,
+      holiday: isHoliday ? {
+        name: holiday.name,
+        description: holiday.description
+      } : null
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

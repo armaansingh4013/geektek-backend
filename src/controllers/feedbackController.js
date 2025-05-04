@@ -1,19 +1,38 @@
 const Feedback = require("../models/Feedback");
+const { sendFeedbackNotification } = require('../utils/emailService');
 
 
 // Create feedback
 exports.createFeedback = async (req, res) => {
   try {
-    const { name, email, message ,images,videos} = req.body;
-    if (!name || !email || !message) {
-      return res.status(400).json({ error: 'All fields are required' });
-    }
+    const { name, email, phone, type, message } = req.body;
+    const photos = req.files ? req.files.map(file => file.path) : [];
 
-    const feedback = new Feedback({ name, email, message,images,videos });
+    const feedback = new Feedback({
+      name,
+      email,
+      phone,
+      type,
+      message,
+      photos
+    });
+
     await feedback.save();
-    res.status(201).json({ message: 'Feedback submitted', data: feedback });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+
+    // Send email notification
+    await sendFeedbackNotification(feedback);
+
+    res.status(201).json({
+      success: true,
+      message: 'Feedback submitted successfully',
+      data: feedback
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error submitting feedback',
+      error: error.message
+    });
   }
 };
 

@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const Settings = require('../models/Settings');
 // const { generateOTP, sendVerificationEmail, sendVerificationSMS, sendPasswordResetEmail } = require('../utils/notificationService');
 
 // Register new user
@@ -56,21 +57,29 @@ const bcrypt = require('bcryptjs');
 exports.login = async (req, res) => {
   try {
     const { employeeCode, password } = req.body;
+    console.log('Login attempt for employee code:', employeeCode);
 
     // Find user by employee code
     const user = await User.findOne({ employeeCode });
     if (!user) {
+      console.log('User not found for employee code:', employeeCode);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+    console.log('User found:', user._id);
 
     // Check if user is enabled
     if (!user.isEnabled) {
+      console.log('User is disabled:', user._id);
       return res.status(403).json({ message: 'Your account has been disabled. Please contact administrator.' });
     }
 
     // Check password
+    console.log('Comparing passwords...');
     const isMatch = await user.comparePassword(password);
+    console.log('Password match result:', isMatch);
+    
     if (!isMatch) {
+      console.log('Password mismatch for user:', user._id);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -80,6 +89,7 @@ exports.login = async (req, res) => {
       "your_jwt_secret_key_here"
     );
 
+    console.log('Login successful for user:', user._id);
     res.json({
       token,
       user: {
@@ -92,10 +102,8 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: error.message });
-    console.log('====================================');
-    console.log(error);
-    console.log('====================================');
   }
 };
 
@@ -223,7 +231,26 @@ exports.changePassword = async (req, res) => {
 // Get user profile
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    let user = await User.findById(req.user._id).select('-password');
+    console.log(user);
+    
+
+    // If user has no shift assigned or shift is not active, get the latest active shift
+    
+      const settings = await Settings.findOne({ type: 'shift' });
+      
+      if (settings && settings.shifts.length > 0) {
+        // Find the latest active shift
+        const latestShift = settings.shifts
+        .filter(shift => shift.endDate == null)
+        if (latestShift) {
+          user= {shift: `${latestShift[0].startTime} - ${latestShift[0].endTime}`,...user._doc};
+        }
+        console.log(latestShift[0].startTime);
+        
+    
+    }
+
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });

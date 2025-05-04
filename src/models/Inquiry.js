@@ -8,16 +8,13 @@ const inquirySchema = new mongoose.Schema(
     },
     planningPermission: {
       type: Boolean,
-      required: true,
     },
     visitOrCall: {
       type: String,
-      enum: ['visit', 'call'],
       required: true,
     },
     planToStart: {
-      type: String, // or Date if preferred
-      required: true,
+      type: String, 
     },
     name: {
       type: String,

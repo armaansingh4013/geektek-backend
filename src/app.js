@@ -16,6 +16,7 @@ const servicesRoutes = require('./routes/servicesRoutes')
 const feedbackRoutes = require('./routes/feedbackRoutes')
 const inquiryRoutes = require('./routes/inquiryRoutes')
 const videoRoutes = require('./routes/videoRoutes')
+const holidayRoutes = require('./routes/holidayRoutes')
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use('/api/services',servicesRoutes)
 app.use('/api/feedback', feedbackRoutes)
 app.use('/api/inquiry', inquiryRoutes)
 app.use('/api/videos', videoRoutes)
+app.use('/api/holidays', holidayRoutes)
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

@@ -1,5 +1,21 @@
 const mongoose = require('mongoose');
 
+const shiftHistorySchema = new mongoose.Schema({
+  shiftId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Settings.shifts',
+    required: true
+  },
+  startDate: {
+    type: Date,
+    required: true
+  },
+  endDate: {
+    type: Date,
+    default: null
+  }
+});
+
 const siteSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -68,6 +84,30 @@ siteSchema.methods.getHolidayDescription = function(date) {
   
   const holiday = this.holidays.get(dateKey);
   return holiday ? holiday.description : null;
+};
+
+// Method to update shift
+siteSchema.methods.updateShift = async function(newShiftId) {
+  const now = new Date();
+  
+  // If there's a current shift, end it
+  if (this.currentShiftId) {
+    const currentShiftHistory = this.shiftHistory.find(
+      history => history.shiftId.equals(this.currentShiftId) && !history.endDate
+    );
+    if (currentShiftHistory) {
+      currentShiftHistory.endDate = now;
+    }
+  }
+
+  // Add new shift history
+  this.shiftHistory.push({
+    shiftId: newShiftId,
+    startDate: now
+  });
+
+  // Update current shift
+  this.currentShiftId = newShiftId;
 };
 
 module.exports = mongoose.model('Site', siteSchema); 

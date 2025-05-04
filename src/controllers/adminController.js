@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
 const Site = require('../models/Site');
+const Holiday = require('../models/Holiday');
 const bcrypt = require('bcryptjs');
 
 exports.getDashboardData = async (req, res) => {
@@ -97,6 +98,14 @@ exports.getDateAttendance = async (req, res) => {
     const nextDay = new Date(date);
     nextDay.setDate(nextDay.getDate() + 1);
 
+    // Check if the date is a holiday
+    const holiday = await Holiday.findOne({
+      date: {
+        $gte: date,
+        $lt: nextDay
+      }
+    });
+
     const attendance = await Attendance.find({
       date: {
         $gte: date,
@@ -113,6 +122,8 @@ exports.getDateAttendance = async (req, res) => {
       siteName: att.siteId.name,
       checkIn: att.checkIn?.time || null,
       checkOut: att.checkOut?.time || null,
+      checkInData: att.checkIn || null,
+      checkOutData: att.checkOut || null,
       status: att.status,
       workImages: att.workImages.map(wi => ({
         images: wi.images,
@@ -123,6 +134,11 @@ exports.getDateAttendance = async (req, res) => {
 
     res.json({
       date: date,
+      isHoliday: !!holiday,
+      holiday: holiday ? {
+        name: holiday.name,
+        description: holiday.description
+      } : null,
       attendance: formattedAttendance
     });
   } catch (error) {
@@ -130,8 +146,6 @@ exports.getDateAttendance = async (req, res) => {
       message: 'Error fetching date attendance',
       error: error.message
     });
-    console.log(error);
-    
   }
 };
 
@@ -143,7 +157,10 @@ exports.getEmployeeReport = async (req, res) => {
     start.setHours(0, 0, 0, 0);
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
-
+  console.log('====================================');
+  console.log( start, end);
+  console.log('====================================');
+  
     // Validate employee exists
     const employee = await User.findById(employeeId);
     if (!employee) {
@@ -160,8 +177,16 @@ exports.getEmployeeReport = async (req, res) => {
     }).populate('siteId', 'name')
       .sort('date');
 
-    // Calculate total days in range
-    const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    // Get all holidays in date range
+    const holidays = await Holiday.find({
+      date: {
+        $gte: start,
+        $lte: end
+      }
+    }).sort('date');
+
+    // Calculate total days in range (inclusive of both start and end dates)
+    const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) ;
     
     // Initialize counters
     let presentDays = 0;
@@ -176,28 +201,40 @@ exports.getEmployeeReport = async (req, res) => {
       ])
     );
 
+    // Create a map of holidays for quick lookup
+    const holidayMap = new Map(
+      holidays.map(holiday => [
+        holiday.date.toISOString().split('T')[0],
+        holiday
+      ])
+    );
+
     // Generate daily status array
     const dailyStatus = [];
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const dateStr = d.toISOString().split('T')[0];
+    const currentDate = new Date(start);
+    const lastDate = new Date(end);
+    
+    while (currentDate <= lastDate) {
+      const dateStr = currentDate.toISOString().split('T')[0];
       const record = attendanceMap.get(dateStr);
+      const holiday = holidayMap.get(dateStr);
 
-      if (record) {
-        if (record.isHoliday) {
-          holidayDays++;
-          dailyStatus.push({
-            date: dateStr,
-            status: 'holiday'
-          });
-        } else {
-          presentDays++;
-          dailyStatus.push({
-            date: dateStr,
-            status: record.status,
-            checkIn: record.checkIn?.time || null,
-            checkOut: record.checkOut?.time || null
-          });
-        }
+      if (holiday) {
+        holidayDays++;
+        dailyStatus.push({
+          date: dateStr,
+          status: 'holiday',
+          holidayName: holiday.name,
+          holidayDescription: holiday.description
+        });
+      } else if (record) {
+        presentDays++;
+        dailyStatus.push({
+          date: dateStr,
+          status: record.status,
+          checkIn: record.checkIn?.time || null,
+          checkOut: record.checkOut?.time || null
+        });
       } else {
         absentDays++;
         dailyStatus.push({
@@ -205,6 +242,9 @@ exports.getEmployeeReport = async (req, res) => {
           status: 'absent'
         });
       }
+
+      // Move to next day
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
     res.json({
@@ -214,8 +254,8 @@ exports.getEmployeeReport = async (req, res) => {
         profileImage: employee.profileImage
       },
       reportPeriod: {
-        startDate: start,
-        endDate: end
+        startDate: start.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0]
       },
       summary: {
         totalDays,

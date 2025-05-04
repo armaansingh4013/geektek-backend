@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 
 const workImageSchema = new mongoose.Schema({
   images: [{
-    type: String,
-    required: true
+    imageUrl: String,
+    public_id: String
   }],
   message: {
     type: String,

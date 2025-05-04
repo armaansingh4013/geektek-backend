@@ -13,6 +13,7 @@ router.get('/shifts', settingsController.getAllShifts);
 router.post('/shifts', settingsController.addShift);
 router.put('/shifts/:shiftId', settingsController.updateShift);
 router.delete('/shifts/:shiftId', settingsController.deleteShift);
+router.get('/shifts/:shiftId/history', settingsController.getShiftHistory);
 
 // User shift routes
 router.post('/shifts/assign/:userId', settingsController.assignShiftToUser);

@@ -25,11 +25,9 @@ const userSchema = new mongoose.Schema({
   },
   department: {
     type: String,
-    required: true
   },
   designation: {
     type: String,
-    required: true
   },
   phoneNumber: {
     type: Number
@@ -44,8 +42,8 @@ const userSchema = new mongoose.Schema({
     default: true
   },
   profileImage: {
-    type: String,
-    default: null
+    imageUrl: String,
+    public_id: String
   },
   shiftId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -93,7 +91,12 @@ userSchema.pre('save', async function(next) {
 
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+  console.log('Comparing passwords in User model');
+  console.log('Candidate password:', candidatePassword);
+  console.log('Stored hashed password:', this.password);
+  const result = await bcrypt.compare(candidatePassword, this.password);
+  console.log('Password comparison result:', result);
+  return result;
 };
 
 module.exports = mongoose.model('User', userSchema); 

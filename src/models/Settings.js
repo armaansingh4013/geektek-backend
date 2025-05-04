@@ -31,6 +31,14 @@ const shiftSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  startDate: {
+    type: Date,
+    default: Date.now
+  },
+  endDate: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
@@ -54,11 +62,7 @@ const settingsSchema = new mongoose.Schema({
     enum: ['shift', 'notification', 'system'],
     unique: true
   },
-  shifts: [shiftSchema],
-  // Add other settings categories here as needed
-  // Example:
-  // notifications: { ... },
-  // system: { ... }
+  shifts: [shiftSchema]
 }, {
   timestamps: true
 });
