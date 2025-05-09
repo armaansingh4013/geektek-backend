@@ -1,17 +1,16 @@
 const mongoose = require('mongoose');
+const { array } = require('../utils/fileUpload');
 
 const inquirySchema = new mongoose.Schema(
   {
     approximateBudget: {
       type: String,
-      required: true,
     },
     planningPermission: {
       type: Boolean,
     },
     visitOrCall: {
       type: String,
-      required: true,
     },
     planToStart: {
       type: String, 
@@ -33,7 +32,6 @@ const inquirySchema = new mongoose.Schema(
     },
     postcode: {
       type: String,
-      required: true,
       trim: true,
     },
     date:{

@@ -14,7 +14,8 @@ exports.createInquiry = async (req, res) => {
       postcode,
       date,
       time,address,
-      message
+      message,
+      estimations
     } = req.body;
 console.log( approximateBudget,
   visitOrCall,
@@ -28,16 +29,10 @@ console.log( approximateBudget,
   message);
 
     if (
-      !approximateBudget ||
-      !visitOrCall ||
       !name ||
       !email ||
       !phone ||
-      !postcode ||
-      !date ||
-      !time||
-      !address ||
-      !message
+      !address 
     ) {
       return res.status(400).json({ error: 'All fields are required' });
     }
@@ -52,7 +47,8 @@ console.log( approximateBudget,
       postcode,
       date,
       time,address,
-      message
+      message,
+      estimations
     });
 
     await inquiry.save();
