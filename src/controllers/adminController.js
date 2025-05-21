@@ -371,7 +371,6 @@ exports.updateEmployee = async (req, res) => {
   try {
     const { employeeId } = req.params;
     const updates = req.body;
-    
     // If updating password, hash it
     if (updates.password) {
       const salt = await bcrypt.genSalt(10);
@@ -469,5 +468,109 @@ exports.resetPassword = async (req, res) => {
   } catch (error) {
     console.error('ResetPassword Error:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Get employee payslip
+exports.getEmployeePayslip = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    const { payType, startDate, endDate } = req.query;
+
+    // Validate payType
+    if (!payType || !['hourly', 'daily'].includes(payType)) {
+      return res.status(400).json({ 
+        message: 'Invalid pay type. Must be either "hourly" or "daily"' 
+      });
+    }
+
+    // Validate dates
+    if (!startDate || !endDate) {
+      return res.status(400).json({ 
+        message: 'Start date and end date are required' 
+      });
+    }
+
+    // Parse dates
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Get employee details
+    const employee = await User.findById(employeeId)
+      .select('name employeeCode hourSalary daySalary');
+    
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    // Get attendance records for the period
+    const attendanceRecords = await Attendance.find({
+      userId: employeeId,
+      date: {
+        $gte: start,
+        $lte: end
+      },
+      status: 'present'
+    });
+
+    let totalHours = 0;
+    let totalDays = 0;
+    let totalAmount = 0;
+
+    // Calculate hours/days and amount based on pay type
+    if (payType === 'hourly') {
+      // Calculate total hours from attendance records
+      attendanceRecords.forEach(record => {
+        if (record.checkIn && record.checkOut) {
+          const checkInTime = new Date(record.checkIn.time);
+          const checkOutTime = new Date(record.checkOut.time);
+          const hoursWorked = (checkOutTime - checkInTime) / (1000 * 60 * 60);
+          totalHours += hoursWorked;
+        }
+      });
+
+      totalAmount = totalHours * employee.hourSalary;
+    } else {
+      // For daily pay, count each present day
+      totalDays = attendanceRecords.length;
+      totalAmount = totalDays * employee.daySalary;
+    }
+
+    // Generate payslip
+    const payslip = {
+      employee: {
+        name: employee.name,
+        employeeCode: employee.employeeCode
+      },
+      period: {
+        startDate: start,
+        endDate: end
+      },
+      payType,
+      details: payType === 'hourly' ? {
+        totalHours,
+        ratePerHour: employee.hourSalary,
+        totalAmount
+      } : {
+        totalDays,
+        ratePerDay: employee.daySalary,
+        totalAmount
+      },
+      attendanceRecords: attendanceRecords.map(record => ({
+        date: record.date,
+        checkIn: record.checkIn?.time,
+        checkOut: record.checkOut?.time,
+        hoursWorked: record.checkIn && record.checkOut ? 
+          (new Date(record.checkOut.time) - new Date(record.checkIn.time)) / (1000 * 60 * 60) : 0
+      }))
+    };
+
+    res.json(payslip);
+  } catch (error) {
+    console.error('Error generating payslip:', error);
+    res.status(500).json({
+      message: 'Error generating payslip',
+      error: error.message
+    });
   }
 };

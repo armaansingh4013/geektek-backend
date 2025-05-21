@@ -51,11 +51,28 @@ const attendanceSchema = new mongoose.Schema({
     enum: ['present', 'absent', 'late', 'early_exit', 'holiday'],
     default: 'absent'
   },
+  shift: {
+    type: String,
+    enum: ['full_day', 'half_day'],
+    default: 'full_day'
+  },
   isHoliday: {
     type: Boolean,
     default: false
   },
   workImages: [workImageSchema]
+});
+
+// Pre-save middleware to calculate shift type
+attendanceSchema.pre('save', function(next) {
+  if (this.checkIn && this.checkOut) {
+    const checkInTime = new Date(this.checkIn.time);
+    const checkOutTime = new Date(this.checkOut.time);
+    const hoursWorked = (checkOutTime - checkInTime) / (1000 * 60 * 60);
+    
+    this.shift = hoursWorked >= 5 ? 'full_day' : 'half_day';
+  }
+  next();
 });
 
 // Indexes

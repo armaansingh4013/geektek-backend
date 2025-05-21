@@ -49,9 +49,50 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Settings.shifts'
   },
+  passportNumber: {
+    type: String,
+    default: ''
+  },
+  passportPhoto: {
+    type: String,
+    default: null
+  },
+  insuranceNumber: {
+    type: String,
+    default: ''
+  },
+  address: {
+    type: String,
+    default: ''
+  },
+  bankDetails: {
+    accountNumber: {
+      type: String,
+      default: ''
+    },
+    sortCode: {
+      type: String,
+      default: ''
+    },
+    accountName: {
+      type: String,
+      default: ''
+    }
+  },
+  hourSalary: {
+    type: Number,
+    default: 0
+  },
+  daySalary: {
+    type: Number,
+    default: 0
+  },
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  documents:{
+    type: Boolean
   }
 });
 

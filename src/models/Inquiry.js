@@ -45,6 +45,9 @@ const inquirySchema = new mongoose.Schema(
     },
     message:{
       type:String
+    },
+    additionalDocument: {
+      type: String
     }
   },
   { timestamps: true }

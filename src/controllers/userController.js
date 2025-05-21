@@ -118,7 +118,6 @@ exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
-
     // Get current user data
     const currentUser = await User.findById(id);
     if (!currentUser) {
@@ -128,6 +127,11 @@ exports.updateUser = async (req, res) => {
     // If updating profile image, delete the old one
     if (updates.profileImage && currentUser.profileImage && updates.profileImage !== currentUser.profileImage) {
       await deleteFile(currentUser.profileImage);
+    }
+
+    // If updating passport photo, delete the old one
+    if (updates.passportPhoto && currentUser.passportPhoto && updates.passportPhoto !== currentUser.passportPhoto) {
+      await deleteFile(currentUser.passportPhoto);
     }
 
     // If updating password, hash it
@@ -181,12 +185,21 @@ exports.deleteUser = async (req, res) => {
 // Self update for user (limited fields)
 exports.updateSelf = async (req, res) => {
   try {
-
-    
     const userId = req.user._id;
     
-    const { name, email,phoneNumber, profileImage } = req.body;
-
+    const { 
+      name, 
+      email,
+      phoneNumber, 
+      profileImage,
+      passportNumber,
+      passportPhoto,
+      insuranceNumber,
+      address,
+      bankDetails,
+      hourSalary,
+      daySalary
+    } = req.body;
     // Get current user data
     const currentUser = await User.findById(userId);
     if (!currentUser) {
@@ -195,13 +208,23 @@ exports.updateSelf = async (req, res) => {
 
     // If updating profile image, delete the old one
     if (profileImage && currentUser.profileImage && profileImage !== currentUser.profileImage) {
-      await deleteFile(currentUser.profileImage);
-       try {
-                await cloudinary.uploader.destroy(currentUser.profileImage.public_id);
-                console.log(`Deleted from Cloudinary: ${currentUser.profileImage.public_id}`);
-              } catch (err) {
-                console.error(`Failed to delete ${currentUser.profileImage.public_id}`, err);
-              }
+      try {
+        await cloudinary.uploader.destroy(currentUser.profileImage.public_id);
+        console.log(`Deleted from Cloudinary: ${currentUser.profileImage.public_id}`);
+      } catch (err) {
+        console.error(`Failed to delete ${currentUser.profileImage.public_id}`, err);
+      }
+    }
+
+    // If updating passport photo, delete the old one
+    if (passportPhoto && currentUser.passportPhoto && passportPhoto !== currentUser.passportPhoto) {
+      await deleteFile(currentUser.passportPhoto);
+      try {
+        await cloudinary.uploader.destroy(currentUser.passportPhoto.public_id);
+        console.log(`Deleted from Cloudinary: ${currentUser.passportPhoto.public_id}`);
+      } catch (err) {
+        console.error(`Failed to delete ${currentUser.passportPhoto.public_id}`, err);
+      }
     }
 
     // Only allow updating specific fields
@@ -209,7 +232,14 @@ exports.updateSelf = async (req, res) => {
       ...(name && { name }),
       ...(email && { email }),
       ...(phoneNumber && { phoneNumber }),
-      ...(profileImage && { profileImage })
+      ...(profileImage && { profileImage }),
+      ...(passportNumber && { passportNumber }),
+      ...(passportPhoto && { passportPhoto }),
+      ...(insuranceNumber && { insuranceNumber }),
+      ...(address && { address }),
+      ...(bankDetails && { bankDetails }),
+      ...(hourSalary !== undefined && { hourSalary }),
+      ...(daySalary !== undefined && { daySalary })
     };
 
     const user = await User.findByIdAndUpdate(

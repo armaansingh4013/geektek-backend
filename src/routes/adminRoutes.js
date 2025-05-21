@@ -17,8 +17,7 @@ const isAdmin = async (req, res, next) => {
 
 // Apply auth and admin middleware to all routes
 router.use(auth);
-router.use(isAdmin);
-
+router.use(isAdmin)
 // Dashboard data
 router.get('/dashboard', adminController.getDashboardData);
 
@@ -33,5 +32,8 @@ router.put('/employees/:employeeId/shift', adminController.updateShift);
 router.get('/attendance/date/:date', adminController.getDateAttendance);
 router.get('/attendance/report', adminController.getEmployeeReport);
 router.get('/attendance/:employeeId/:date', adminController.getEmployeeDateDetail);
+
+// New route for getting employee payslips
+router.get('/employees/payslip/:employeeId', adminController.getEmployeePayslip);
 
 module.exports = router; 

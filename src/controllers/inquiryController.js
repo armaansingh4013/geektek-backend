@@ -15,7 +15,8 @@ exports.createInquiry = async (req, res) => {
       date,
       time,address,
       message,
-      estimations
+      estimations,
+      additionalDocument
     } = req.body;
 console.log( approximateBudget,
   visitOrCall,
@@ -26,7 +27,8 @@ console.log( approximateBudget,
   postcode,
   date,
   time,address,
-  message);
+  message,
+  additionalDocument);
 
     if (
       !name ||
@@ -48,7 +50,8 @@ console.log( approximateBudget,
       date,
       time,address,
       message,
-      estimations
+      estimations,
+      additionalDocument
     });
 
     await inquiry.save();

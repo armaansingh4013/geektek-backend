@@ -21,6 +21,9 @@ const estimationSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    additionalDocument: {
+      type: String,
+    },
     estimations: [{
       name: {
         type: String,
