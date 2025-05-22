@@ -198,7 +198,8 @@ exports.updateSelf = async (req, res) => {
       address,
       bankDetails,
       hourSalary,
-      daySalary
+      daySalary,
+      documents
     } = req.body;
     // Get current user data
     const currentUser = await User.findById(userId);
@@ -239,7 +240,9 @@ exports.updateSelf = async (req, res) => {
       ...(address && { address }),
       ...(bankDetails && { bankDetails }),
       ...(hourSalary !== undefined && { hourSalary }),
-      ...(daySalary !== undefined && { daySalary })
+      ...(daySalary !== undefined && { daySalary }),
+
+      ...(documents !== undefined && { documents })
     };
 
     const user = await User.findByIdAndUpdate(

@@ -98,7 +98,8 @@ exports.login = async (req, res) => {
         employeeCode: user.employeeCode,
         department: user.department,
         designation: user.designation,
-        role: user.role
+        role: user.role,
+        documents:user.documents
       }
     });
   } catch (error) {
