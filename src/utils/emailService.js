@@ -231,7 +231,7 @@ exports.sendAdminNewUserNotification = async (user, adminEmail) => {
   try {
     const mailOptions = {
       from: process.env.EMAIL_USER,
-      to: adminEmail,
+      to: process.env.ADMIN_EMAIL,
       subject: 'New User Registration - Crystal Oak',
       html: `
         <h2>New User Registration</h2>

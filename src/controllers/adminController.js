@@ -233,7 +233,8 @@ exports.getEmployeeReport = async (req, res) => {
           date: dateStr,
           status: record.status,
           checkIn: record.checkIn?.time || null,
-          checkOut: record.checkOut?.time || null
+          checkOut: record.checkOut?.time || null,
+          shift:record.shift || null
         });
       } else {
         absentDays++;

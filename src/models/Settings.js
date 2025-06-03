@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const shiftSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
     trim: true
   },
   startTime: {
