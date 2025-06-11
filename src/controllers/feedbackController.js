@@ -66,6 +66,51 @@ exports.getAllFeedbacks = async (req, res) => {
   }
 };
 
+// Get all verified feedbacks
+exports.getVerifiedFeedbacks = async (req, res) => {
+  try {
+    const verifiedFeedbacks = await Feedback.find({ verified: true }).sort({ createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      data: verifiedFeedbacks
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching verified feedbacks',
+      error: err.message
+    });
+  }
+};
+
+// Toggle feedback verification
+exports.toggleVerification = async (req, res) => {
+  try {
+    const feedback = await Feedback.findById(req.params.id);
+    
+    if (!feedback) {
+      return res.status(404).json({
+        success: false,
+        message: 'Feedback not found'
+      });
+    }
+
+    feedback.verified = !feedback.verified;
+    await feedback.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Feedback ${feedback.verified ? 'verified' : 'unverified'} successfully`,
+      data: feedback
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Error toggling feedback verification',
+      error: err.message
+    });
+  }
+};
 
 // Delete feedback
 exports.deleteFeedback = async (req, res) => {

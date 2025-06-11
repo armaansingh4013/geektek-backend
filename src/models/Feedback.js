@@ -23,6 +23,10 @@ const feedbackSchema = new mongoose.Schema(
       min: 1,
       max: 5
     },
+    verified: {
+      type: Boolean,
+      default: false
+    },
     images: [
       {
         imageUrl: String,
