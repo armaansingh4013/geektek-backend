@@ -1,5 +1,6 @@
 const Message = require('../models/Message');
 const User = require('../models/User');
+const { sendDirectNotification } = require('../notifications/controller');
 
 const connectedUsers = new Map();
 
@@ -82,13 +83,25 @@ const initializeChat = (io) => {
         }));
 
         // Send to all receivers if they are online
-        messages.forEach(message => {
+        messages.forEach(async message => {
           console.log(message);
           console.log(connectedUsers);
           
           const receiverSocketId = connectedUsers.get(message.receiver._id.toString());
           if (receiverSocketId) {
+            // User is online, send message directly
             io.to(receiverSocketId).emit('newMessage', message);
+          } else {
+            // User is offline, send push notification
+            try {
+              await sendDirectNotification({
+                userId: message.receiver._id.toString(),
+                title: `New message from ${message.sender.name}`,
+                body: message.content
+              });
+            } catch (error) {
+              console.error('Error sending push notification:', error);
+            }
           }
         });
 

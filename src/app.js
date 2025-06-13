@@ -86,7 +86,7 @@ app.use('/api/inquiry', inquiryRoutes)
 app.use('/api/videos', videoRoutes)
 app.use('/api/holidays', holidayRoutes)
 app.use('/api/estimations', estimationRoutes);
-app.use('/notifications', notificationRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
 
 // Error handling middleware

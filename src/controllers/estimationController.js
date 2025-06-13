@@ -1,5 +1,6 @@
 const Estimation = require('../models/Estimation');
 const { sendEstimationNotification } = require('../utils/emailService');
+const { notifyAdmins } = require('../utils/notificationService');
 
 // Create new estimation
 exports.createEstimation = async (req, res) => {
@@ -8,7 +9,14 @@ exports.createEstimation = async (req, res) => {
     await estimation.save();
 
     // Send notification email
-   await sendEstimationNotification(estimation);
+    await sendEstimationNotification(estimation);
+
+    // Send push notification to all admin users
+    await notifyAdmins(
+      'New Estimation Request',
+      `${estimation.name} submitted a new estimation request`
+    );
+
     res.status(201).json({
       message: 'Estimation created successfully',
       estimation

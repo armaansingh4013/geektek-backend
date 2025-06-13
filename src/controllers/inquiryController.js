@@ -1,5 +1,6 @@
 const Inquiry = require("../models/Inquiry");
 const { sendInquiryNotification } = require('../utils/emailService');
+const { notifyAdmins } = require('../utils/notificationService');
 
 // Create new inquiry
 exports.createInquiry = async (req, res) => {
@@ -13,7 +14,8 @@ exports.createInquiry = async (req, res) => {
       phone,
       postcode,
       date,
-      time,address,
+      time,
+      address,
       message,
       estimations,
       additionalDocument
@@ -48,7 +50,8 @@ console.log( approximateBudget,
       phone,
       postcode,
       date,
-      time,address,
+      time,
+      address,
       message,
       estimations,
       additionalDocument
@@ -58,6 +61,12 @@ console.log( approximateBudget,
 
     // Send email notification
     await sendInquiryNotification(inquiry);
+
+    // Send push notification to all admin users
+    await notifyAdmins(
+      'New Inquiry Received',
+      `${name} submitted a new inquiry for ${visitOrCall || 'service'}`
+    );
 
     res.status(201).json({ message: 'Inquiry submitted', data: inquiry });
   } catch (err) {

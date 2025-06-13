@@ -4,7 +4,8 @@ const UserToken = require('../models/UserToken');
 const storePushToken = async (req, res) => {
   try {
     const { userId, expoPushToken, deviceInfo, deviceId, deviceType } = req.body;
-
+    console.log(req.body);
+    
     if (!expoPushToken || !userId || !deviceId || !deviceType) {
       return res.status(400).json({ 
         error: 'Missing required fields',
@@ -41,7 +42,9 @@ const storePushToken = async (req, res) => {
 const sendNotificationToUser = async (req, res) => {
   try {
     const { userId, title, body, deviceIds } = req.body;
-
+    console.log('====================================');
+    console.log(req.body);
+    console.log('====================================');
     if (!userId || !title || !body) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -79,6 +82,45 @@ const sendNotificationToUser = async (req, res) => {
   } catch (error) {
     console.error('Error sending notification:', error);
     res.status(500).json({ error: 'Failed to send notification' });
+  }
+};
+
+const sendDirectNotification = async ({ userId, title, body }) => {
+  try {
+    if (!userId || !title || !body) {
+      throw new Error('Missing required fields');
+    }
+
+    // Build query to find active tokens
+    const query = { userId, isActive: true };
+
+    // Find all active tokens for the user
+    const tokens = await UserToken.find(query);
+    
+    if (!tokens.length) {
+      throw new Error('No active tokens found for user');
+    }
+
+    // Send notification to all matching devices
+    const notifications = tokens.map(token => 
+      sendPushNotification(token.expoPushToken, title, body)
+    );
+
+    const results = await Promise.allSettled(notifications);
+    
+    // Count successful and failed notifications
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+
+    return { 
+      message: 'Notifications processed',
+      totalDevices: tokens.length,
+      successful,
+      failed
+    };
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    throw error;
   }
 };
 
@@ -125,6 +167,7 @@ const deactivateDevice = async (req, res) => {
 module.exports = { 
   storePushToken, 
   sendNotificationToUser,
+  sendDirectNotification,
   getUserDevices,
   deactivateDevice
 };

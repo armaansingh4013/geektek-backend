@@ -1,5 +1,6 @@
 const Feedback = require("../models/Feedback");
 const { sendFeedbackNotification } = require('../utils/emailService');
+const { notifyAdmins } = require('../utils/notificationService');
 const cloudinary = require('../utils/cloudinary');
 
 // Create feedback
@@ -34,6 +35,12 @@ exports.createFeedback = async (req, res) => {
 
     // Send email notification
     await sendFeedbackNotification(feedback);
+
+    // Send push notification to all admin users
+    await notifyAdmins(
+      'New Feedback Received',
+      `${name} submitted a new feedback with ${rating} star rating`
+    );
 
     res.status(201).json({
       success: true,
