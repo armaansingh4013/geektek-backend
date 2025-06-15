@@ -30,7 +30,7 @@ exports.createHoliday = async (req, res) => {
 exports.getAllHolidays = async (req, res) => {
   try {
     const holidays = await Holiday.find()
-      .sort({ date: 1 })
+      .sort({ date: -1 })
       .populate('createdBy', 'name email');
 
     res.status(200).json({

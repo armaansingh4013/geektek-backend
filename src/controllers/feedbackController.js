@@ -111,6 +111,9 @@ exports.toggleVerification = async (req, res) => {
       data: feedback
     });
   } catch (err) {
+    console.log('====================================');
+    console.log(err);
+    console.log('====================================');
     res.status(500).json({
       success: false,
       message: 'Error toggling feedback verification',
