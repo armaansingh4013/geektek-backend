@@ -42,8 +42,14 @@ const userSchema = new mongoose.Schema({
     default: true
   },
   profileImage: {
-    imageUrl: String,
-    public_id: String
+    imageUrl: {
+      type: String,
+      default: 'https://res.cloudinary.com/dxfwlrmb5/image/upload/v1750229972/crystaloak/j5a0aq2ogod2sgvpdvth.png'
+    },
+    public_id: {
+      type: String,
+      default: 'crystaloak/j5a0aq2ogod2sgvpdvth'
+    }
   },
   shiftId: {
     type: mongoose.Schema.Types.ObjectId,
