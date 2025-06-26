@@ -16,6 +16,6 @@ router.post('/send', sendNotificationToUser);
 
 // Device management
 router.get('/devices/:userId', getUserDevices);
-router.delete('/devices/:userId/:deviceId', deactivateDevice);
+router.delete('/devices/:deviceId', deactivateDevice);
 
 module.exports = router;

@@ -142,25 +142,21 @@ const getUserDevices = async (req, res) => {
 
 const deactivateDevice = async (req, res) => {
   try {
-    const { userId, deviceId } = req.params;
+    const { deviceId } = req.params;
     
-    const device = await UserToken.findOneAndUpdate(
-      { userId, deviceId },
-      { isActive: false },
-      { new: true }
-    );
+    const device = await UserToken.findOneAndDelete({ deviceId });
 
     if (!device) {
       return res.status(404).json({ error: 'Device not found' });
     }
 
     res.json({ 
-      message: 'Device deactivated successfully',
+      message: 'Device deleted successfully',
       device
     });
   } catch (error) {
-    console.error('Error deactivating device:', error);
-    res.status(500).json({ error: 'Failed to deactivate device' });
+    console.error('Error deleting device:', error);
+    res.status(500).json({ error: 'Failed to delete device' });
   }
 };
 

@@ -67,6 +67,9 @@ router.get('/conversations', auth, async (req, res) => {
       },
       {
         $unwind: '$user'
+      },
+      {
+        $sort: { 'lastMessage.createdAt': -1 }
       }
     ]);
 console.log(conversations)

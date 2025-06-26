@@ -57,21 +57,27 @@ const initializeChat = (io) => {
           throw new Error('Sender not found');
         }
 
-
         let receivers = [];
+        let message = null;
+        let admins = [];
         
         if (sender.role !== 'admin') {
           // If sender is not admin, send to all admins
-          const admins = await User.find({ role: 'admin' });
-          receivers = [admins[0]._id];
+          admins = await User.find({ role: 'admin' });
+          receivers = admins.map(admin => admin._id);
+          // Save message with first admin as receiver
+          message = new Message({
+            sender: senderId,
+            receiver: receivers[0],
+            content
+          });
+          await message.save();
+          await message.populate('sender', 'name');
+          await message.populate('receiver', 'name');
         } else {
           // If sender is admin, send to specified receiver
           receivers = [receiverId];
-        }
-
-        // Create and save messages for each receiver
-        const messages = await Promise.all(receivers.map(async (receiverId) => {
-          const message = new Message({
+          message = new Message({
             sender: senderId,
             receiver: receiverId,
             content
@@ -79,23 +85,17 @@ const initializeChat = (io) => {
           await message.save();
           await message.populate('sender', 'name');
           await message.populate('receiver', 'name');
-          return message;
-        }));
+        }
 
-        // Send to all receivers if they are online
-        messages.forEach(async message => {
-          console.log(message);
-          console.log(connectedUsers);
-          
-          const receiverSocketId = connectedUsers.get(message.receiver._id.toString());
+        // Send to all receivers: if online, send real-time; if offline, send notification
+        for (const recvId of receivers) {
+          const receiverSocketId = connectedUsers.get(recvId.toString());
           if (receiverSocketId) {
-            // User is online, send message directly
             io.to(receiverSocketId).emit('newMessage', message);
           } else {
-            // User is offline, send push notification
             try {
               await sendDirectNotification({
-                userId: message.receiver._id.toString(),
+                userId: recvId.toString(),
                 title: `New message from ${message.sender.name}`,
                 body: message.content
               });
@@ -103,10 +103,10 @@ const initializeChat = (io) => {
               console.error('Error sending push notification:', error);
             }
           }
-        });
+        }
 
         // Send confirmation to sender
-        socket.emit('messageSent', messages[0]);
+        socket.emit('messageSent', message);
         console.log("sent");
         
       } catch (error) {
