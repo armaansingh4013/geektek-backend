@@ -63,7 +63,7 @@ const initializeChat = (io) => {
         if (sender.role !== 'admin') {
           // If sender is not admin, send to all admins
           const admins = await User.find({ role: 'admin' });
-          receivers = admins[0]._id;
+          receivers = [admins[0]._id];
         } else {
           // If sender is admin, send to specified receiver
           receivers = [receiverId];
