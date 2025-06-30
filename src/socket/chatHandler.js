@@ -90,6 +90,7 @@ const initializeChat = (io) => {
         // Send to all receivers: if online, send real-time; if offline, send notification
         for (const recvId of receivers) {
           const receiverSocketId = connectedUsers.get(recvId.toString());
+          console.log(message)
           if (receiverSocketId) {
             io.to(receiverSocketId).emit('newMessage', message);
           } else {
@@ -118,13 +119,19 @@ const initializeChat = (io) => {
     // Handle message read status
     socket.on('markAsRead', async (messageId) => {
       try {
+
         const message = await Message.findById(messageId);
         if (message && message.receiver.toString() === socket.userId) {
           message.isRead = true;
           await message.save();
-
+          console.log('====================================');
+          console.log(message);
+          console.log('====================================');
           // Notify sender if online
           const senderSocketId = connectedUsers.get(message.sender.toString());
+          console.log('====================================');
+          console.log(senderSocketId);
+          console.log('====================================');
           if (senderSocketId) {
             io.to(senderSocketId).emit('messageRead', messageId);
           }

@@ -54,7 +54,21 @@ router.get('/conversations', auth, async (req, res) => {
               '$sender'
             ]
           },
-          lastMessage: { $last: '$$ROOT' }
+          lastMessage: { $last: '$$ROOT' },
+          unreadCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$receiver', req.user._id] },
+                    { $eq: ['$isRead', false] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          }
         }
       },
       {

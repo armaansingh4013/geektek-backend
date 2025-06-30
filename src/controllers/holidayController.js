@@ -44,4 +44,67 @@ exports.getAllHolidays = async (req, res) => {
       error: error.message
     });
   }
+};
+
+exports.updateHoliday = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, date, description } = req.body;
+
+    const holiday = await Holiday.findById(id);
+    
+    if (!holiday) {
+      return res.status(404).json({
+        success: false,
+        message: 'Holiday not found'
+      });
+    }
+
+    // Update the holiday fields
+    holiday.name = name || holiday.name;
+    holiday.date = date || holiday.date;
+    holiday.description = description || holiday.description;
+
+    await holiday.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Holiday updated successfully',
+      data: holiday
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating holiday',
+      error: error.message
+    });
+  }
+};
+
+exports.deleteHoliday = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const holiday = await Holiday.findById(id);
+    
+    if (!holiday) {
+      return res.status(404).json({
+        success: false,
+        message: 'Holiday not found'
+      });
+    }
+
+    await Holiday.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Holiday deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting holiday',
+      error: error.message
+    });
+  }
 }; 
