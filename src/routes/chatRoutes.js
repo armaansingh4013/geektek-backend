@@ -6,9 +6,7 @@ const auth = require('../middleware/auth');
 // Get chat history between admin and employee
 router.get('/history/:userId', auth, async (req, res) => {
   try {
-    console.log('====================================');
-    console.log(req);
-    console.log('====================================');
+  
     const messages = await Message.find({
       $or: [
         { sender: req.params.userId },
@@ -18,9 +16,6 @@ router.get('/history/:userId', auth, async (req, res) => {
     .sort({ createdAt: 1 })
     .populate('sender', 'name')
     .populate('receiver', 'name');
-    console.log('====================================');
-    console.log(messages);
-    console.log('====================================');
     res.json(messages);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching chat history' });
@@ -30,7 +25,6 @@ router.get('/history/:userId', auth, async (req, res) => {
 // Get all conversations for admin
 router.get('/conversations', auth, async (req, res) => {
   try {
-    console.log(req.user);
     
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Only admin can access all conversations' });
@@ -86,7 +80,6 @@ router.get('/conversations', auth, async (req, res) => {
         $sort: { 'lastMessage.createdAt': -1 }
       }
     ]);
-console.log(conversations)
     // Return 200 with empty array if no conversations found
     if (!conversations || conversations.length === 0) {
       return res.status(200).json([]);

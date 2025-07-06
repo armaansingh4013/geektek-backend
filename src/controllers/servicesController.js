@@ -109,13 +109,15 @@ exports.deleteService = async (req, res) => {
     const service = await Service.findById(req.params.id);
     if (!service) return res.status(404).json({ error: 'Service not found' });
 
-    // Delete images from server (local storage)
-    service.images.forEach((imgPath) => {
-      const fullPath = path.join(__dirname, '../uploads', path.basename(imgPath));
-      if (fs.existsSync(fullPath)) {
-        fs.unlinkSync(fullPath);
+    // Delete images from Cloudinary
+    for (const imgObj of service.images) {
+      try {
+        await cloudinary.uploader.destroy(imgObj.public_id);
+        console.log(`Deleted from Cloudinary: ${imgObj.public_id}`);
+      } catch (err) {
+        console.error(`Failed to delete ${imgObj.public_id}`, err);
       }
-    });
+    }
 
     await service.deleteOne();
     res.json({ message: 'Service and images deleted' });

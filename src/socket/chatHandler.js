@@ -48,6 +48,9 @@ const initializeChat = (io) => {
     // Handle new messages
     socket.on('sendMessage', async (data) => {
       try {
+        console.log('====================================');
+        console.log(socket.userId);
+        console.log('====================================');
         const { receiverId, content } = data;
         const senderId = socket.userId;
 
