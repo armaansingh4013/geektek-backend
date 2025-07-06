@@ -3,6 +3,7 @@ const Attendance = require('../models/Attendance');
 const Site = require('../models/Site');
 const Holiday = require('../models/Holiday');
 const bcrypt = require('bcryptjs');
+const { ObjectId } = require('mongodb');
 
 exports.getDashboardData = async (req, res) => {
   try {
@@ -162,14 +163,14 @@ exports.getEmployeeReport = async (req, res) => {
   console.log('====================================');
   
     // Validate employee exists
-    const employee = await User.findById(employeeId);
+    const employee = await User.findById(new ObjectId(employeeId));
     if (!employee) {
       return res.status(404).json({ message: 'Employee not found' });
     }
 
     // Get all attendance records in date range
     const attendanceRecords = await Attendance.find({
-      userId: employeeId,
+      userId: new ObjectId(employeeId),
       date: {
         $gte: start,
         $lte: end
@@ -284,7 +285,7 @@ exports.getEmployeeDateDetail = async (req, res) => {
     nextDay.setDate(nextDay.getDate() + 1);
 
     const attendance = await Attendance.findOne({
-      userId: employeeId,
+      userId: new ObjectId(employeeId),
       date: {
         $gte: targetDate,
         $lt: nextDay
@@ -379,7 +380,7 @@ exports.updateEmployee = async (req, res) => {
     }
 
     const employee = await User.findByIdAndUpdate(
-      employeeId,
+      new ObjectId(employeeId),
       updates,
       { new: true }
     ).select('-password');
@@ -415,7 +416,7 @@ exports.updateShift = async (req, res) => {
     }
 
     const employee = await User.findByIdAndUpdate(
-      employeeId,
+      new ObjectId(employeeId),
       {
         shift: { startTime, endTime, timeZone }
       },
@@ -447,7 +448,7 @@ exports.resetPassword = async (req, res) => {
     console.log(employeeId);
     console.log('====================================');
 
-    const user = await User.findOne({"_id":employeeId});
+    const user = await User.findOne({"_id":new ObjectId(employeeId)});
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -494,7 +495,9 @@ exports.getEmployeePayslip = async (req, res) => {
 
     // Parse dates
     const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
     const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
 
     // Get employee details
     const employee = await User.findById(employeeId)
@@ -503,17 +506,17 @@ exports.getEmployeePayslip = async (req, res) => {
     if (!employee) {
       return res.status(404).json({ message: 'Employee not found' });
     }
-
     // Get attendance records for the period
     const attendanceRecords = await Attendance.find({
-      userId: employeeId,
+      userId: new ObjectId(employeeId),
       date: {
         $gte: start,
         $lte: end
       },
-      status: 'present'
+      // status: 'present'
     });
 
+console.log(attendanceRecords,start,end,employeeId)
     let totalHours = 0;
     let totalDays = 0;
     let totalAmount = 0;
@@ -533,7 +536,14 @@ exports.getEmployeePayslip = async (req, res) => {
       totalAmount = totalHours * employee.hourSalary;
     } else {
       // For daily pay, count each present day
-      totalDays = attendanceRecords.length;
+      // Check for half-day shifts and count them as 0.5 days
+      attendanceRecords.forEach(record => {
+        if (record.shift === 'half_day') {
+          totalDays += 0.5;
+        } else {
+          totalDays += 1;
+        }
+      });
       totalAmount = totalDays * employee.daySalary;
     }
 
@@ -561,6 +571,7 @@ exports.getEmployeePayslip = async (req, res) => {
         date: record.date,
         checkIn: record.checkIn?.time,
         checkOut: record.checkOut?.time,
+        shift: record.shift || null,
         hoursWorked: record.checkIn && record.checkOut ? 
           (new Date(record.checkOut.time) - new Date(record.checkIn.time)) / (1000 * 60 * 60) : 0
       }))

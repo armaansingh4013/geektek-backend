@@ -70,7 +70,16 @@ attendanceSchema.pre('save', function(next) {
     const checkOutTime = new Date(this.checkOut.time);
     const hoursWorked = (checkOutTime - checkInTime) / (1000 * 60 * 60);
     
-    this.shift = hoursWorked >= 5 ? 'full_day' : 'half_day';
+    if (hoursWorked < 3.5) {
+      this.shift = 'half_day';
+    } else if (hoursWorked >= 3.5 && hoursWorked < 6) {
+      this.shift = 'half_day';
+    } else if (hoursWorked >= 6 && hoursWorked <= 8) {
+      this.shift = 'full_day';
+    } else {
+      // For hours worked > 8, still consider as full day
+      this.shift = 'full_day';
+    }
   }
   next();
 });
