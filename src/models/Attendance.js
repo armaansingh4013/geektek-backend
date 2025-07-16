@@ -36,6 +36,7 @@ const attendanceSchema = new mongoose.Schema({
       type: { type: String},
       coordinates: [Number]
     },
+    address: String,
     photo: String
   },
   checkOut: {
@@ -44,6 +45,7 @@ const attendanceSchema = new mongoose.Schema({
       type: { type: String },
       coordinates: [Number]
     },
+    address: String,
     photo: String
   },
   status: {

@@ -50,15 +50,24 @@ exports.markCheckIn = async (req, res) => {
     // Check if it's a holiday
     // const isHoliday = site.isHoliday(new Date());
     const isHoliday = false
+    // Determine if location is a string (address) or array (coordinates)
+    let checkInLocation = undefined;
+    let checkInAddress = undefined;
+    if (typeof location === 'string') {
+      checkInAddress = location;
+    } else if (Array.isArray(location)) {
+      checkInLocation = {
+        type: 'Point',
+        coordinates: location
+      };
+    }
     const attendance = new Attendance({
       userId,
       date: new Date(),
       checkIn: {
         time: new Date(),
-        location: {
-          type: 'Point',
-          coordinates: location
-        },
+        ...(checkInLocation ? { location: checkInLocation } : {}),
+        ...(checkInAddress ? { address: checkInAddress } : {}),
         photo: photo
       },
       isHoliday,
@@ -112,13 +121,21 @@ exports.markCheckOut = async (req, res) => {
     //   return res.status(400).json({ message: 'You are not within the site premises' });
     // }
 
-    // Update attendance with check-out details
-    attendance.checkOut = {
-      time: new Date(),
-      location: {
+    // For check-out
+    let checkOutLocation = undefined;
+    let checkOutAddress = undefined;
+    if (typeof location === 'string') {
+      checkOutAddress = location;
+    } else if (Array.isArray(location)) {
+      checkOutLocation = {
         type: 'Point',
         coordinates: location
-      },
+      };
+    }
+    attendance.checkOut = {
+      time: new Date(),
+      ...(checkOutLocation ? { location: checkOutLocation } : {}),
+      ...(checkOutAddress ? { address: checkOutAddress } : {}),
       photo: photo
     };
 
