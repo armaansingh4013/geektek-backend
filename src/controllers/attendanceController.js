@@ -189,7 +189,7 @@ exports.getUserAttendance = async (req, res) => {
     }
 
     const attendance = await Attendance.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ date: -1 })
       .populate('userId', 'name employeeCode')
       .populate('siteId', 'name address');
 
@@ -218,7 +218,7 @@ exports.getAllAttendance = async (req, res) => {
     }
 
     const attendance = await Attendance.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .populate('userId', 'name employeeCode')
       .populate('siteId', 'name address');
 
@@ -331,7 +331,7 @@ exports.addWorkImages = async (req, res) => {
 
     if (!message || !images || !images.length) {
       return res.status(400).json({
-        message: 'Both message and image paths are required'
+        message: 'Both message and image are required'
       });
     }
 
@@ -352,7 +352,7 @@ exports.addWorkImages = async (req, res) => {
 
     if (!attendance) {
       return res.status(404).json({
-        message: 'No attendance record found for today'
+        message: 'Please mark attendance to upload Work Images'
       });
     }
 
@@ -369,6 +369,8 @@ exports.addWorkImages = async (req, res) => {
       workImages: attendance.workImages
     });
   } catch (error) {
+    console.log(error);
+    
     res.status(500).json({
       message: 'Error adding work images',
       error: error.message

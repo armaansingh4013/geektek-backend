@@ -51,24 +51,29 @@ const cloudinary = require('../utils/cloudinary');
 
 exports.uploadPhotos = async (req, res) => {
   try {
-    console.log("Inside uploadPhotos");
-
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
-    const uploadPromises = req.files.map(file =>
-      cloudinary.uploader.upload(file.path, {
-        folder: 'crystaloak',
-      }).then(result => {
-        fs.unlinkSync(file.path); // delete local file
-        return {
-          imageUrl: result.secure_url,
-          public_id: result.public_id,
-        };
-      })
-    );
+    // Helper to upload a buffer to Cloudinary
+    const uploadToCloudinary = (fileBuffer) => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: 'crystaloak' },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve({
+              imageUrl: result.secure_url,
+              public_id: result.public_id,
+            });
+          }
+        );
+        stream.end(fileBuffer);
+      });
+    };
 
+    // Upload all files in parallel from buffer
+    const uploadPromises = req.files.map(file => uploadToCloudinary(file.buffer));
     const uploadedImages = await Promise.all(uploadPromises);
 
     res.status(200).json({
