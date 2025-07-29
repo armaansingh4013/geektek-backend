@@ -54,6 +54,7 @@ exports.uploadPhotos = async (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });
     }
+console.log("recieved");
 
     // Helper to upload a buffer to Cloudinary
     const uploadToCloudinary = (fileBuffer) => {
@@ -75,6 +76,7 @@ exports.uploadPhotos = async (req, res) => {
     // Upload all files in parallel from buffer
     const uploadPromises = req.files.map(file => uploadToCloudinary(file.buffer));
     const uploadedImages = await Promise.all(uploadPromises);
+console.log("uploaded");
 
     res.status(200).json({
       success: true,

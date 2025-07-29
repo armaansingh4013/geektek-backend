@@ -158,9 +158,6 @@ exports.getEmployeeReport = async (req, res) => {
     start.setHours(0, 0, 0, 0);
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
-  console.log('====================================');
-  console.log( start, end);
-  console.log('====================================');
   
     // Validate employee exists
     const employee = await User.findById(new ObjectId(employeeId));
@@ -235,6 +232,8 @@ exports.getEmployeeReport = async (req, res) => {
           status: record.status,
           checkIn: record.checkIn?.time || null,
           checkOut: record.checkOut?.time || null,
+          checkInAddress: record.checkIn?.address || null,
+          checkOutAddress: record.checkOut?.address || null,
           shift:record.shift || null
         });
       } else {
