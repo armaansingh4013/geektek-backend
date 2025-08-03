@@ -118,6 +118,7 @@ exports.getDateAttendance = async (req, res) => {
 
     const formattedAttendance = attendance.map(att => ({
       employeeName: att.userId.name,
+      employeeId: att.userId._id,
       employeeCode: att.userId.employeeCode,
       profileImage: att.userId.profileImage,
       siteName: att.siteId.name,
@@ -234,6 +235,8 @@ exports.getEmployeeReport = async (req, res) => {
           checkOut: record.checkOut?.time || null,
           checkInAddress: record.checkIn?.address || null,
           checkOutAddress: record.checkOut?.address || null,
+          checkInPhoto: record.checkIn?.photo || null,
+          checkOutPhoto: record.checkOut?.photo || null,
           shift:record.shift || null
         });
       } else {
