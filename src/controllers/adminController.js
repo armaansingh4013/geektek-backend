@@ -113,7 +113,7 @@ exports.getDateAttendance = async (req, res) => {
         $lt: nextDay
       }
     }).populate('userId', 'name employeeCode profileImage')
-      .populate('siteId', 'name')
+      // .populate('siteId', 'name')
       .sort('userId.name');
 
     const formattedAttendance = attendance.map(att => ({
@@ -121,7 +121,7 @@ exports.getDateAttendance = async (req, res) => {
       employeeId: att.userId._id,
       employeeCode: att.userId.employeeCode,
       profileImage: att.userId.profileImage,
-      siteName: att.siteId.name,
+      // siteName: att.siteId.name,
       checkIn: att.checkIn?.time || null,
       checkOut: att.checkOut?.time || null,
       checkInData: att.checkIn || null,
@@ -144,6 +144,9 @@ exports.getDateAttendance = async (req, res) => {
       attendance: formattedAttendance
     });
   } catch (error) {
+    console.log('====================================');
+    console.log(error.message);
+    console.log('====================================');
     res.status(500).json({
       message: 'Error fetching date attendance',
       error: error.message
