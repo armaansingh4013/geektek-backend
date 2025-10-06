@@ -24,7 +24,7 @@ const attendanceSchema = new mongoose.Schema({
   siteId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Site',
-    required: true
+    // required: true
   },
   date: {
     type: Date,

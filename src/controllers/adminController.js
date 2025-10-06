@@ -159,8 +159,135 @@ exports.getEmployeeReport = async (req, res) => {
     start.setHours(0, 0, 0, 0);
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
-  
-    // Validate employee exists
+
+    // If employeeId is not provided, return records for all employees between dates
+    if (!employeeId) {
+      const attendance = await Attendance.find({
+        date: {
+          $gte: start,
+          $lte: end
+        }
+      })
+        .populate('userId', 'name employeeCode profileImage')
+        .populate('siteId', 'name')
+        .sort('date');
+
+      const holidays = await Holiday.find({
+        date: {
+          $gte: start,
+          $lte: end
+        }
+      }).sort('date');
+
+      const holidayMap = new Map(
+        holidays.map(h => [h.date.toISOString().split('T')[0], h])
+      );
+
+      // Group records date-wise with array of employees
+      const byDate = new Map();
+      attendance.forEach(record => {
+        const dateKey = record.date.toISOString().split('T')[0];
+        if (!byDate.has(dateKey)) {
+          const holiday = holidayMap.get(dateKey);
+          byDate.set(dateKey, {
+            date: dateKey,
+            isHoliday: !!holiday,
+            holidayName: holiday ? holiday.name : undefined,
+            holidayDescription: holiday ? holiday.description : undefined,
+            employees: []
+          });
+        }
+        const bucket = byDate.get(dateKey);
+        bucket.employees.push({
+          id: record.userId?._id,
+          name: record.userId?.name,
+          employeeCode: record.userId?.employeeCode,
+          profileImage: record.userId?.profileImage,
+          siteName: record.siteId?.name || null,
+          status: record.status,
+          checkIn: record.checkIn?.time || null,
+          checkOut: record.checkOut?.time || null,
+          checkInAddress: record.checkIn?.address || null,
+          checkOutAddress: record.checkOut?.address || null,
+          checkInPhoto: record.checkIn?.photo || null,
+          checkOutPhoto: record.checkOut?.photo || null,
+          shift: record.shift || null
+        });
+      });
+
+      // Ensure all dates in range exist, even if no attendance (retain holiday info)
+      const dates = [];
+      const cursor = new Date(start);
+      while (cursor <= end) {
+        const key = cursor.toISOString().split('T')[0];
+        if (!byDate.has(key)) {
+          const holiday = holidayMap.get(key);
+          byDate.set(key, {
+            date: key,
+            isHoliday: !!holiday,
+            employees: []
+          });
+        }
+        const entry = byDate.get(key);
+        dates.push({
+          date: entry.date,
+          isHoliday: entry.isHoliday,
+          presentEmployees: entry.employees ? entry.employees.length : 0
+        });
+        cursor.setDate(cursor.getDate() + 1);
+      }
+
+      // Build attendances grouped by employee with per-date records
+      const byEmployee = new Map();
+      attendance.forEach(record => {
+        const key = record.userId?._id?.toString();
+        if (!key) return;
+        if (!byEmployee.has(key)) {
+          byEmployee.set(key, {
+            employee: {
+              id: record.userId._id,
+              name: record.userId.name,
+              employeeCode: record.userId.employeeCode,
+              profileImage: record.userId.profileImage
+            },
+            records: []
+          });
+        }
+        const group = byEmployee.get(key);
+        group.records.push({
+          date: record.date ? record.date.toISOString().split('T')[0] : null,
+          siteName: record.siteId?.name || null,
+          status: record.status,
+          checkIn: record.checkIn?.time || null,
+          checkOut: record.checkOut?.time || null,
+          checkInAddress: record.checkIn?.address || null,
+          checkOutAddress: record.checkOut?.address || null,
+          checkInPhoto: record.checkIn?.photo || null,
+          checkOutPhoto: record.checkOut?.photo || null,
+          shift: record.shift || null
+        });
+      });
+
+      // Build summary for the organization within date range
+      const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+      const holidayDays = dates.filter(d => d.isHoliday).length;
+      const presentDays = dates.filter(d => d.presentEmployees > 0).length;
+      const absentDays = Math.max(0, totalDays - presentDays - holidayDays);
+
+      return res.json({
+        totalDays,
+        presentDays,
+        absentDays,
+        holidayDays,
+        dates,
+        attendances: Array.from(byEmployee.values()).map(e => ({
+          employee: e.employee,
+          records: e.records
+        }))
+      });
+    }
+
+    // Validate employee exists when employeeId is provided
     const employee = await User.findById(new ObjectId(employeeId));
     if (!employee) {
       return res.status(404).json({ message: 'Employee not found' });
@@ -270,6 +397,9 @@ exports.getEmployeeReport = async (req, res) => {
       dailyStatus
     });
   } catch (error) {
+    console.log('====================================');
+    console.log(error.message);
+    console.log('====================================');
     res.status(500).json({
       message: 'Error generating employee report',
       error: error.message
