@@ -7,10 +7,9 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  employeeCode: {
+  last_name: {
     type: String,
-    unique: true,
-    required: true
+    trim: true
   },
   email: {
     type: String,
@@ -23,105 +22,33 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  department: {
-    type: String,
-  },
-  designation: {
-    type: String,
-  },
   phoneNumber: {
     type: Number
   },
   role: {
     type: String,
-    enum: ['admin', 'user'],
-    default: 'user'
+    enum: ['admin', 'owner', "web"],
+    default: 'owner'
   },
   isEnabled: {
     type: Boolean,
     default: true
   },
-  profileImage: {
-    imageUrl: {
-      type: String,
-      default: 'https://res.cloudinary.com/dxfwlrmb5/image/upload/v1750229972/crystaloak/j5a0aq2ogod2sgvpdvth.png'
-    },
-    public_id: {
-      type: String,
-      default: 'crystaloak/j5a0aq2ogod2sgvpdvth'
-    }
-  },
-  shiftId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Settings.shifts'
-  },
-  passportNumber: {
-    type: String,
-    default: ''
-  },
-  passportPhoto: {
-    type: String,
-    default: null
-  },
-  insuranceNumber: {
-    type: String,
-    default: ''
-  },
-  address: {
-    type: String,
-    default: ''
-  },
-  bankDetails: {
-    accountNumber: {
-      type: String,
-      default: ''
-    },
-    sortCode: {
-      type: String,
-      default: ''
-    },
-    accountName: {
-      type: String,
-      default: ''
-    }
-  },
-  hourSalary: {
-    type: Number,
-    default: 0
-  },
-  daySalary: {
-    type: Number,
-    default: 0
-  },
   createdAt: {
     type: Date,
     default: Date.now
   },
-  documents:{
-    type: Boolean
-  }
+  website: {
+    type: String,
+    trim: true,
+    required: function () {
+      return this.role === 'owner';
+    }
+  },
+
 });
 
-// Generate default password based on name
-userSchema.methods.generateDefaultPassword = function() {
-  const firstName = this.name.split(' ')[0];
-  return `${firstName}@123`;
-};
 
-// Generate employee code
-userSchema.statics.generateEmployeeCode = async function() {
-  const lastUser = await this.findOne().sort({ employeeCode: -1 });
-  
-  if (!lastUser) {
-    return 'EMP0001';
-  }
-
-  const lastNumber = parseInt(lastUser.employeeCode.replace('EMP', ''));
-  const nextNumber = lastNumber + 1;
-  
-  // If we reach 9999, continue with 10000
-  return `EMP${nextNumber.toString().padStart(4, '0')}`;
-};
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
@@ -138,11 +65,7 @@ userSchema.pre('save', async function(next) {
 
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
-  console.log('Comparing passwords in User model');
-  console.log('Candidate password:', candidatePassword);
-  console.log('Stored hashed password:', this.password);
   const result = await bcrypt.compare(candidatePassword, this.password);
-  console.log('Password comparison result:', result);
   return result;
 };
 

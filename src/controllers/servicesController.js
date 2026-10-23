@@ -27,8 +27,8 @@ exports.getServiceImages = async (req, res) => {
 // 3. Create a new service
 exports.createService = async (req, res) => {
   try {
-    const { name, images } = req.body;
-    const service = new Service({ name, images });
+    const { name,description, images } = req.body;
+    const service = new Service({ name,description, images });
     await service.save();
     res.status(201).json(service);
   } catch (err) {
@@ -41,7 +41,7 @@ exports.createService = async (req, res) => {
 
 exports.updateService = async (req, res) => {
   try {
-    const { name, addImages = [], removeImages = [] } = req.body;
+    const { name, description, addImages = [], removeImages = [] } = req.body;
 
     const service = await Service.findById(req.params.id);
     if (!service) return res.status(404).json({ error: 'Service not found' });
@@ -51,6 +51,10 @@ exports.updateService = async (req, res) => {
       service.name = name;
     }
 
+    // Update description if provided
+    if (description) {
+      service.description = description;
+    } 
     // Add new images
     if (Array.isArray(addImages) && addImages.length > 0) {
       service.images.push(...addImages);
@@ -129,7 +133,7 @@ exports.deleteService = async (req, res) => {
 
 exports.getServices = async (req, res) => {
   try {
-    const services = await Service.find({}, 'name images'); // only select name and images
+    const services = await Service.find({}, 'name images description'); // only select name and images
     res.status(200).json(services);
   } catch (err) {
     res.status(500).json({ error: err.message });

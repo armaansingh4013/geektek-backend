@@ -46,6 +46,10 @@ const inquirySchema = new mongoose.Schema(
     message:{
       type:String
     },
+    status:{
+      type:String,
+      default:"New"
+    },
     additionalDocument: {
       type: String
     }

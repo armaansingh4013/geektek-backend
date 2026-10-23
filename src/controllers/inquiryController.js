@@ -20,24 +20,13 @@ exports.createInquiry = async (req, res) => {
       estimations,
       additionalDocument
     } = req.body;
-console.log( approximateBudget,
-  visitOrCall,
-  planToStart,
-  name,
-  email,
-  phone,
-  postcode,
-  date,
-  time,address,
-  message,
-  additionalDocument);
+
 
     if (
       !name ||
       !email ||
-      !phone ||
-      !address 
-    ) {
+      !phone 
+        ) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -79,6 +68,25 @@ exports.getAllInquiries = async (req, res) => {
   try {
     const inquiries = await Inquiry.find().sort({ createdAt: -1 });
     res.status(200).json(inquiries);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+//Update inquiry status
+exports.updateInquiry = async (req, res) => {
+  try {
+    const inquiryId = req.params.id;
+    const {  status } = req.body;
+
+    if (!inquiryId || !status) {
+      return res.status(400).json({ error: 'Inquiry ID and status are required' });
+    }
+
+    const inquiry = await Inquiry.findByIdAndUpdate(inquiryId, {status}, { new: true });    
+
+    res.status(200).json({ message: 'Inquiry updated', data: inquiry });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

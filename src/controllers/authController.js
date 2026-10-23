@@ -5,73 +5,81 @@ const Settings = require('../models/Settings');
 // const { generateOTP, sendVerificationEmail, sendVerificationSMS, sendPasswordResetEmail } = require('../utils/notificationService');
 
 // Register new user
-// exports.register = async (req, res) => {
-//   try {
-//     const { username, email, password, phoneNumber } = req.body;
+exports.register = async (req, res) => {
+  try {
+    const { username, email, password, phoneNumber,role,name,website } = req.body;
 
-//     // Check if user already exists
-//     const existingUser = await User.findOne({ 
-//       $or: [{ email }, { username }, { phoneNumber }] 
-//     });
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      $or: [{ email }] 
+    });
+    console.log('existingUser:', existingUser);
     
-//     if (existingUser) {
-//       return res.status(400).json({ 
-//         message: 'User with this email, username, or phone number already exists' 
-//       });
-//     }
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: 'User with this email, username, or phone number already exists.' 
+      });
+    }
+    if(role === 'owner' && !website){ 
+      return res.status(400).json({
+        message: 'Website is required for owner role'
+      });
+    }
+    // Create new user
+    const user = new User({
+      username,
+      email,
+      password,
+      phoneNumber,
+      role,
+      name,
+      website
+    });
 
-//     // Create new user
-//     const user = new User({
-//       username,
-//       email,
-//       password,
-//       phoneNumber
-//     });
+    // Generate verification tokens
+    // const emailToken = crypto.randomBytes(32).toString('hex');
+    // const phoneOTP = generateOTP();
 
-//     // Generate verification tokens
-//     const emailToken = crypto.randomBytes(32).toString('hex');
-//     const phoneOTP = generateOTP();
+    // user.emailVerificationToken = emailToken;
+    // user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    // user.phoneVerificationToken = phoneOTP;
+    // user.phoneVerificationExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-//     user.emailVerificationToken = emailToken;
-//     user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-//     user.phoneVerificationToken = phoneOTP;
-//     user.phoneVerificationExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
 
-//     await user.save();
+    // Send verification emails/SMS
+    // await sendVerificationEmail(email, emailToken);
+    // if (phoneNumber) {
+    //   await sendVerificationSMS(phoneNumber, phoneOTP);
+    // }
 
-//     // Send verification emails/SMS
-//     await sendVerificationEmail(email, emailToken);
-//     if (phoneNumber) {
-//       await sendVerificationSMS(phoneNumber, phoneOTP);
-//     }
-
-//     res.status(201).json({ 
-//       message: 'Registration successful. Please verify your email and phone number.' 
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
+    res.status(201).json({ 
+      message: 'Registration successful. Please verify your email and phone number.' 
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // Login user
 exports.login = async (req, res) => {
   try {
-    const { employeeCode, password } = req.body;
-    console.log('Login attempt for employee code:', employeeCode);
+    const { email, password } = req.body;
+    // console.log('Login attempt for employee code:', employeeCode);
 
     // Find user by employee code
-    const user = await User.findOne({ employeeCode });
+    const user = await User.findOne({ email });
     if (!user) {
-      console.log('User not found for employee code:', employeeCode);
+      console.log('User not found for employee code:');
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     console.log('User found:', user._id);
 
     // Check if user is enabled
-    if (!user.isEnabled) {
-      console.log('User is disabled:', user._id);
-      return res.status(403).json({ message: 'Your account has been disabled. Please contact administrator.' });
-    }
+    // if (!user.isEnabled) {
+    //   console.log('User is disabled:', user._id);
+    //   return res.status(403).json({ message: 'Your account has been disabled. Please contact administrator.' });
+    // }
 
     // Check password
     console.log('Comparing passwords...');

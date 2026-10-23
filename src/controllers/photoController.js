@@ -50,6 +50,9 @@ const fs = require('fs');
 const cloudinary = require('../utils/cloudinary');
 
 exports.uploadPhotos = async (req, res) => {
+  console.log('====================================');
+  console.log("req.files", req);
+  console.log('====================================');
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });

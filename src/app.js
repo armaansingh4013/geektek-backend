@@ -15,43 +15,19 @@ const photoRoutes = require('./routes/photoRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const servicesRoutes = require('./routes/servicesRoutes')
+const projectsRoutes = require('./routes/projectsRoutes')
 const feedbackRoutes = require('./routes/feedbackRoutes')
 const inquiryRoutes = require('./routes/inquiryRoutes')
 const videoRoutes = require('./routes/videoRoutes')
 const holidayRoutes = require('./routes/holidayRoutes')
+const websiteRoutes = require('./routes/websiteRoutes')
 const estimationRoutes = require('./routes/estimationRoutes');
 const notificationRoutes = require('./notifications/route');
-const chatRoutes = require('./routes/chatRoutes');
-const initializeChat = require('./socket/chatHandler');
-const { Server } = require("socket.io");
+
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  },
-  transports: ['websocket', 'polling'],
-  path: '/socket.io/',
-});
 
-io.on("connection", (socket) => {
-  console.log("⚡️ New client connected:", socket.id);
-
-  // Example: Listen and emit
-  socket.on("send_message", (data) => {
-    console.log("📨 Message received:", data);
-    io.emit("receive_message", data); // broadcast
-  });
-
-  socket.on("disconnect", () => {
-    console.log("❌ Client disconnected:", socket.id);
-  });
-});
-
-// Initialize chat socket handler
-initializeChat(io);
 
 // Middleware
 app.use(cors());
@@ -63,7 +39,7 @@ app.use(morgan('dev'));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Database connection
-mongoose.connect("mongodb+srv://dairy:dairy123@dairy.pj8g1.mongodb.net/?retryWrites=true&w=majority&appName=dairy")
+mongoose.connect("mongodb+srv://geektekco_db_user:gkU4iHORb2bjleqc@cluster0.myt29q4.mongodb.net/?appName=Cluster0")
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
@@ -81,13 +57,14 @@ app.use('/api/photos', photoRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/services',servicesRoutes)
+app.use('/api/projects',projectsRoutes)
 app.use('/api/feedback', feedbackRoutes)
 app.use('/api/inquiry', inquiryRoutes)
 app.use('/api/videos', videoRoutes)
 app.use('/api/holidays', holidayRoutes)
+app.use('/api/website', websiteRoutes)
 app.use('/api/estimations', estimationRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/chat', chatRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
