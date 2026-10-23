@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createWebsite, getAllWebsites, updateWebsite, deleteWebsite, getWebsite } = require('../controllers/WebsiteController');
+const { createWebsite, getAllWebsites, updateWebsite, deleteWebsite, getWebsite } = require('../controllers/websiteController');
 const auth = require('../middleware/auth');
 
 router.use(auth);
